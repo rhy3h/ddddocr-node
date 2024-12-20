@@ -4,6 +4,12 @@ This project is a port of the Python project [DdddOcr](https://github.com/sml2h3
 
 The goal is to make it easy to use this trained model for text detection in JavaScript.
 
+## Installation
+
+```sh
+npm install ddddocr-node
+```
+
 ## Features
 
  - Basic OCR recognition capability
