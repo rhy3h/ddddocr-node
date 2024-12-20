@@ -1,7 +1,7 @@
 {
   "name": "ddddocr-node",
   "version": "0.1.0",
-  "description": "",
+  "description": "The Node version of DdddOcr",
   "homepage": "https://github.com/rhy3h/ddddocr-node#readme",
   "bugs": {
     "url": "https://github.com/rhy3h/ddddocr-node/issues"
