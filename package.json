@@ -19,8 +19,7 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "build": "webpack",
-    "test": "node test.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "@tensorflow/tfjs": "^4.22.0",
