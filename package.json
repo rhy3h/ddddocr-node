@@ -11,6 +11,10 @@
     "url": "git+https://github.com/rhy3h/ddddocr-node.git"
   },
   "license": "MIT",
+  "keywords": [
+    "ocr",
+    "ddddocr"
+  ],
   "author": "rhy3h",
   "type": "commonjs",
   "main": "index.js",
