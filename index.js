@@ -25,25 +25,36 @@ const MIX_UPPER_NUM_CASE = UPPER_CASE + NUM_CASE;
 const MIX_LOWER_UPPER_NUM_CASE = LOWWER_CASE + UPPER_CASE + NUM_CASE;
 
 const MODEL_TYPE = {
-    OCR: 0
+    OCR: 0,
+    OCR_BETA: 1
 }
 
 class DdddOcr {
     _ocrOnnxPath = path.join(__dirname, './onnx/common_old.onnx');
     _charsetPath = path.join(__dirname, './onnx/common_old.json');
 
+    _ocrBetaOnnxPath = path.join(__dirname, './onnx/common.onnx');
+    _charsetBetaPath = path.join(__dirname, './onnx/common.json');
+
     _ocrOrtSessionPending = null;
+    _ocrBetaOrtSessionPending = null;
     _charsetPending = null;
 
     validCharsetRangeSet = new Set([]);
     deleteRangeSet = new Set([]);
 
+    _mode = MODEL_TYPE.OCR;
+
     constructor() {}
 
-    async preload(mode = MODEL_TYPE.OCR) {
-        switch (mode) {
+    async preload() {
+        switch (this._mode) {
             case MODEL_TYPE.OCR: {
-                await this._loadOcrOrtSession(this._ocrOnnxPath, this._charsetPath);
+                await this._loadOcrOrtSession();
+                break;
+            }
+            case MODEL_TYPE.OCR_BETA: {
+                await this._loadBetaOcrOrtSession();
                 break;
             }
         }
@@ -51,14 +62,39 @@ class DdddOcr {
         return this;
     }
 
-    _loadOcrOrtSession(onnxPath, charsetPath) {
+    setMode(mode) {
+        switch (mode) {
+            case MODEL_TYPE.OCR: 
+            case MODEL_TYPE.OCR_BETA: {
+                this._mode = mode;
+                break;
+            }
+            default: {
+                throw new Error('Not support mode');
+            }
+        }
+
+        return this;
+    }
+
+    _loadOcrOrtSession() {
         if (!this._ocrOrtSessionPending) {
-            const ocrOnnxPromise = ort.InferenceSession.create(onnxPath);
-            const charsetPromise = this._loadCharset(charsetPath);
+            const ocrOnnxPromise = ort.InferenceSession.create(this._ocrOnnxPath);
+            const charsetPromise = this._loadCharset(this._charsetPath);
             this._ocrOrtSessionPending = Promise.all([ocrOnnxPromise, charsetPromise]);
         }
 
         return this._ocrOrtSessionPending;
+    }
+
+    _loadBetaOcrOrtSession() {
+        if (!this._ocrBetaOrtSessionPending) {
+            const ocrOnnxPromise = ort.InferenceSession.create(this._ocrBetaOnnxPath);
+            const charsetPromise = this._loadCharset(this._charsetBetaPath);
+            this._ocrBetaOrtSessionPending = Promise.all([ocrOnnxPromise, charsetPromise]);
+        }
+
+        return this._ocrBetaOrtSessionPending;
     }
 
     _loadCharset(charsetPath = this._charsetPath) {
@@ -147,6 +183,10 @@ class DdddOcr {
     }
 
     async _run(inputTensor) {
+        if (!this._ocrOrtSessionPending) {
+            this._loadOcrOrtSession();
+        }
+
         const [ortSession, charset] = await this._ocrOrtSessionPending;
         const result = await ortSession.run({ input1: inputTensor });
 
@@ -157,6 +197,31 @@ class DdddOcr {
             dims,
             charset
         };
+    }
+
+    async _runBeta(inputTensor) {
+        if (!this._ocrBetaOrtSessionPending) {
+            this._loadBetaOcrOrtSession();
+        }
+
+        const [ortSession, charset] = await this._ocrBetaOrtSessionPending;
+        const result = await ortSession.run({ input1: inputTensor });
+
+        const { cpuData, dims } = result['387'];
+
+        return {
+            cpuData,
+            dims,
+            charset
+        };
+    }
+
+    async run(inputTensor) {
+        if (this._mode == MODEL_TYPE.OCR_BETA) {
+            return this._runBeta(inputTensor);
+        }
+
+        return this._run(inputTensor);
     }
 
     parseToChar(argmaxData, charset) {
@@ -180,10 +245,6 @@ class DdddOcr {
     }
 
     async classification(img) {
-        if (!this._ocrOrtSessionPending) {
-            await this.preload(MODEL_TYPE.OCR);
-        }
-
         const image = await Jimp.read(img);
 
         const { width, height } = image.bitmap;
@@ -202,7 +263,7 @@ class DdddOcr {
         }
         const inputTensor = new ort.Tensor('float32', floatData, [1, 1, targetHeight, targetWidth]);
 
-        const { cpuData, dims, charset } = await this._run(inputTensor);
+        const { cpuData, dims, charset } = await this.run(inputTensor);
 
         const tensor = tf.tensor(cpuData);
         const reshapedTensor = tf.reshape(tensor, dims);
