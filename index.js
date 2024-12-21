@@ -24,28 +24,41 @@ const MIX_LOWWER_NUM_CASE = LOWWER_CASE + NUM_CASE;
 const MIX_UPPER_NUM_CASE = UPPER_CASE + NUM_CASE;
 const MIX_LOWER_UPPER_NUM_CASE = LOWWER_CASE + UPPER_CASE + NUM_CASE;
 
+const MODEL_TYPE = {
+    OCR: 0
+}
+
 class DdddOcr {
-    _onnxPath = path.join(__dirname, './onnx/common_old.onnx');
+    _ocrOnnxPath = path.join(__dirname, './onnx/common_old.onnx');
     _charsetPath = path.join(__dirname, './onnx/common_old.json');
 
-    _ortSessionPending = null;
+    _ocrOrtSessionPending = null;
     _charsetPending = null;
 
-    _charsetRange = '';
-    _deleteRange = '';
-    _validCharsetRangeIndex = {};
+    validCharsetRangeSet = new Set([]);
+    deleteRangeSet = new Set([]);
 
-    constructor(_onnxPath = undefined, _charsetPath = undefined) {
-        this._loadOrtSession(_onnxPath);
-        this._loadCharset(_charsetPath);
-    }
+    constructor() {}
 
-    _loadOrtSession(onnxPath = this._onnxPath) {
-        if (!this._ortSessionPending) {
-            this._ortSessionPending = ort.InferenceSession.create(onnxPath);
+    async preload(mode = MODEL_TYPE.OCR) {
+        switch (mode) {
+            case MODEL_TYPE.OCR: {
+                await this._loadOcrOrtSession(this._ocrOnnxPath, this._charsetPath);
+                break;
+            }
         }
 
-        return this._ortSessionPending;
+        return this;
+    }
+
+    _loadOcrOrtSession(onnxPath, charsetPath) {
+        if (!this._ocrOrtSessionPending) {
+            const ocrOnnxPromise = ort.InferenceSession.create(onnxPath);
+            const charsetPromise = this._loadCharset(charsetPath);
+            this._ocrOrtSessionPending = Promise.all([ocrOnnxPromise, charsetPromise]);
+        }
+
+        return this._ocrOrtSessionPending;
     }
 
     _loadCharset(charsetPath = this._charsetPath) {
@@ -53,16 +66,30 @@ class DdddOcr {
             this._charsetPending = fsm.readFile(charsetPath, { encoding: 'utf-8' })
                 .then((result) => {
                     return JSON.parse(result);
-                })
-                .then((charset) => {
-                    for (let i = 0; i < charset.length; i++) {
-                        this._validCharsetRangeIndex[i] = charset[i];
-                    }
-                    return charset;
                 });
         }
 
         return this._charsetPending;
+    }
+
+    setCharsetRange(charsetRange) {
+        this.validCharsetRangeSet = new Set(charsetRange);
+    }
+
+    setDeleteCharsetRange(charsetRange) {
+        this.deleteRangeSet = new Set(charsetRange);
+    }
+
+    isValidChar(char) {
+        if (this.deleteRangeSet.has(char)) {
+            return false;
+        }
+
+        if (this.validCharsetRangeSet.size == 0) {
+            return true;
+        }
+
+        return this.validCharsetRangeSet.has(char);
     }
 
     async setRanges(charsetRange) {
@@ -70,35 +97,35 @@ class DdddOcr {
             case 'number': {
                 switch (charsetRange) {
                     case CHARSET_RANGE.NUM_CASE: {
-                        this._charsetRange = NUM_CASE;
+                        this.setCharsetRange(NUM_CASE);
                         break;
                     }
                     case CHARSET_RANGE.LOWWER_CASE: {
-                        this._charsetRange = LOWWER_CASE;
+                        this.setCharsetRange(LOWWER_CASE);
                         break;
                     }
                     case CHARSET_RANGE.UPPER_CASE: {
-                        this._charsetRange = UPPER_CASE;
+                        this.setCharsetRange(UPPER_CASE);
                         break;
                     }
                     case CHARSET_RANGE.MIX_LOWWER_UPPER_CASE: {
-                        this._charsetRange = MIX_LOWWER_UPPER_CASE;
+                        this.setCharsetRange(MIX_LOWWER_UPPER_CASE);
                         break;
                     }
                     case CHARSET_RANGE.MIX_LOWWER_NUM_CASE: {
-                        this._charsetRange = MIX_LOWWER_NUM_CASE;
+                        this.setCharsetRange(MIX_LOWWER_NUM_CASE);
                         break;
                     }
                     case CHARSET_RANGE.MIX_UPPER_NUM_CASE: {
-                        this._charsetRange = MIX_UPPER_NUM_CASE;
+                        this.setCharsetRange(MIX_UPPER_NUM_CASE);
                         break;
                     }
                     case CHARSET_RANGE.MIX_LOWWER_UPPER_NUM_CASE: {
-                        this._charsetRange = MIX_LOWER_UPPER_NUM_CASE;
+                        this.setCharsetRange(MIX_LOWER_UPPER_NUM_CASE);
                         break;
                     }
                     case CHARSET_RANGE.NO_LOWEER_UPPER_NUM_CASE: {
-                        this._deleteRange = MIX_LOWER_UPPER_NUM_CASE;
+                        this.setDeleteCharsetRange(MIX_LOWER_UPPER_NUM_CASE);
                         break;
                     }
                     default: {
@@ -108,7 +135,7 @@ class DdddOcr {
                 break;
             }
             case 'string': {
-                this._charsetRange = charsetRange;
+                this.setCharsetRange(charsetRange);
                 break
             }
             default: {
@@ -116,35 +143,47 @@ class DdddOcr {
             }
         }
 
-        const charset = await this._loadCharset();
-
-        this._validCharsetRangeIndex = {};
-        for (let i = 0; i < this._charsetRange.length; i++) {
-            const charsetRange = this._charsetRange[i];
-            const targetCharSetIndex = charset.findIndex((f) => f == charsetRange);
-
-            this._validCharsetRangeIndex[targetCharSetIndex] = charsetRange;
-        }
-
-        for (let i = 0; i < this._deleteRange.length; i++) {
-            const deleteRange = this._deleteRange[i];
-
-            if (this._validCharsetRangeIndex[deleteRange]) {
-                delete this._validCharsetRangeIndex[deleteRange];
-            }
-        }
-
         return this;
     }
 
     async _run(inputTensor) {
-        const ortSession = await this._ortSessionPending;
+        const [ortSession, charset] = await this._ocrOrtSessionPending;
         const result = await ortSession.run({ input1: inputTensor });
 
-        return result['387'];
+        const { cpuData, dims } = result['387'];
+
+        return {
+            cpuData,
+            dims,
+            charset
+        };
+    }
+
+    parseToChar(argmaxData, charset) {
+        const result = [];
+
+        let lastItem = 0;
+        for (let i = 0; i < argmaxData.length; i++) {
+            if (argmaxData[i] == lastItem) {
+                continue;
+            } else {
+                lastItem = argmaxData[i];
+            }
+
+            const char = charset[argmaxData[i]];
+            if (argmaxData[i] != 0 && this.isValidChar(char)) {
+                result.push(char);
+            }
+        }
+
+        return result.join('');
     }
 
     async classification(img) {
+        if (!this._ocrOrtSessionPending) {
+            await this.preload(MODEL_TYPE.OCR);
+        }
+
         const image = await Jimp.read(img);
 
         const { width, height } = image.bitmap;
@@ -163,35 +202,21 @@ class DdddOcr {
         }
         const inputTensor = new ort.Tensor('float32', floatData, [1, 1, targetHeight, targetWidth]);
 
-        const { cpuData, dims } = await this._run(inputTensor);
-        const result = [];
-
-        await this._loadCharset();
+        const { cpuData, dims, charset } = await this._run(inputTensor);
 
         const tensor = tf.tensor(cpuData);
         const reshapedTensor = tf.reshape(tensor, dims);
         const argmaxResult = tf.argMax(reshapedTensor, 2);
-
         const argmaxData = await argmaxResult.data();
 
-        let lastItem = 0;
-        for (let i = 0; i < argmaxData.length; i++) {
-            if (argmaxData[i] == lastItem) {
-                continue;
-            } else {
-                lastItem = argmaxData[i];
-            }
+        const result = this.parseToChar(argmaxData, charset);
 
-            if (argmaxData[i] != 0 && this._validCharsetRangeIndex[argmaxData[i]]) {
-                result.push(this._validCharsetRangeIndex[argmaxData[i]]);
-            }
-        }
-
-        return result.join('');
+        return result;
     }
 }
 
 module.exports = {
     DdddOcr,
-    CHARSET_RANGE
+    CHARSET_RANGE,
+    MODEL_TYPE
 };
