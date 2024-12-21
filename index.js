@@ -40,8 +40,8 @@ class DdddOcr {
     _ocrBetaOrtSessionPending = null;
     _charsetPending = null;
 
-    validCharsetRangeSet = new Set([]);
-    deleteRangeSet = new Set([]);
+    _validCharSet = new Set([]);
+    _inValidCharSet = new Set([]);
 
     _mode = MODEL_TYPE.OCR;
 
@@ -108,24 +108,24 @@ class DdddOcr {
         return this._charsetPending;
     }
 
-    setCharsetRange(charsetRange) {
-        this.validCharsetRangeSet = new Set(charsetRange);
+    setValidCharSet(charset) {
+        this._validCharSet = new Set(charset);
     }
 
-    setDeleteCharsetRange(charsetRange) {
-        this.deleteRangeSet = new Set(charsetRange);
+    setInValidCharset(charset) {
+        this._inValidCharSet = new Set(charset);
     }
 
-    isValidChar(char) {
-        if (this.deleteRangeSet.has(char)) {
+    _isValidChar(char) {
+        if (this._inValidCharSet.has(char)) {
             return false;
         }
 
-        if (this.validCharsetRangeSet.size == 0) {
+        if (this._validCharSet.size == 0) {
             return true;
         }
 
-        return this.validCharsetRangeSet.has(char);
+        return this._validCharSet.has(char);
     }
 
     async setRanges(charsetRange) {
@@ -133,35 +133,35 @@ class DdddOcr {
             case 'number': {
                 switch (charsetRange) {
                     case CHARSET_RANGE.NUM_CASE: {
-                        this.setCharsetRange(NUM_CASE);
+                        this.setValidCharSet(NUM_CASE);
                         break;
                     }
                     case CHARSET_RANGE.LOWWER_CASE: {
-                        this.setCharsetRange(LOWWER_CASE);
+                        this.setValidCharSet(LOWWER_CASE);
                         break;
                     }
                     case CHARSET_RANGE.UPPER_CASE: {
-                        this.setCharsetRange(UPPER_CASE);
+                        this.setValidCharSet(UPPER_CASE);
                         break;
                     }
                     case CHARSET_RANGE.MIX_LOWWER_UPPER_CASE: {
-                        this.setCharsetRange(MIX_LOWWER_UPPER_CASE);
+                        this.setValidCharSet(MIX_LOWWER_UPPER_CASE);
                         break;
                     }
                     case CHARSET_RANGE.MIX_LOWWER_NUM_CASE: {
-                        this.setCharsetRange(MIX_LOWWER_NUM_CASE);
+                        this.setValidCharSet(MIX_LOWWER_NUM_CASE);
                         break;
                     }
                     case CHARSET_RANGE.MIX_UPPER_NUM_CASE: {
-                        this.setCharsetRange(MIX_UPPER_NUM_CASE);
+                        this.setValidCharSet(MIX_UPPER_NUM_CASE);
                         break;
                     }
                     case CHARSET_RANGE.MIX_LOWWER_UPPER_NUM_CASE: {
-                        this.setCharsetRange(MIX_LOWER_UPPER_NUM_CASE);
+                        this.setValidCharSet(MIX_LOWER_UPPER_NUM_CASE);
                         break;
                     }
                     case CHARSET_RANGE.NO_LOWEER_UPPER_NUM_CASE: {
-                        this.setDeleteCharsetRange(MIX_LOWER_UPPER_NUM_CASE);
+                        this.setInValidCharset(MIX_LOWER_UPPER_NUM_CASE);
                         break;
                     }
                     default: {
@@ -171,7 +171,7 @@ class DdddOcr {
                 break;
             }
             case 'string': {
-                this.setCharsetRange(charsetRange);
+                this.setValidCharSet(charsetRange);
                 break
             }
             default: {
@@ -182,7 +182,7 @@ class DdddOcr {
         return this;
     }
 
-    async _run(inputTensor) {
+    async _runOcr(inputTensor) {
         if (!this._ocrOrtSessionPending) {
             this._loadOcrOrtSession();
         }
@@ -199,7 +199,7 @@ class DdddOcr {
         };
     }
 
-    async _runBeta(inputTensor) {
+    async _runOcrBeta(inputTensor) {
         if (!this._ocrBetaOrtSessionPending) {
             this._loadBetaOcrOrtSession();
         }
@@ -216,15 +216,15 @@ class DdddOcr {
         };
     }
 
-    async run(inputTensor) {
+    async _run(inputTensor) {
         if (this._mode == MODEL_TYPE.OCR_BETA) {
-            return this._runBeta(inputTensor);
+            return this._runOcrBeta(inputTensor);
         }
 
-        return this._run(inputTensor);
+        return this._runOcr(inputTensor);
     }
 
-    parseToChar(argmaxData, charset) {
+    _parseToChar(argmaxData, charset) {
         const result = [];
 
         let lastItem = 0;
@@ -236,7 +236,7 @@ class DdddOcr {
             }
 
             const char = charset[argmaxData[i]];
-            if (argmaxData[i] != 0 && this.isValidChar(char)) {
+            if (argmaxData[i] != 0 && this._isValidChar(char)) {
                 result.push(char);
             }
         }
@@ -263,14 +263,14 @@ class DdddOcr {
         }
         const inputTensor = new ort.Tensor('float32', floatData, [1, 1, targetHeight, targetWidth]);
 
-        const { cpuData, dims, charset } = await this.run(inputTensor);
+        const { cpuData, dims, charset } = await this._run(inputTensor);
 
         const tensor = tf.tensor(cpuData);
         const reshapedTensor = tf.reshape(tensor, dims);
         const argmaxResult = tf.argMax(reshapedTensor, 2);
         const argmaxData = await argmaxResult.data();
 
-        const result = this.parseToChar(argmaxData, charset);
+        const result = this._parseToChar(argmaxData, charset);
 
         return result;
     }
