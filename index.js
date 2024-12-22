@@ -38,35 +38,32 @@ class DdddOcr {
 
     _ocrOrtSessionPending = null;
     _ocrBetaOrtSessionPending = null;
-    _charsetPending = null;
 
     _validCharSet = new Set([]);
     _inValidCharSet = new Set([]);
 
-    _mode = MODEL_TYPE.OCR;
+    _isBetaOcrEnable = false;
 
     constructor() {}
 
-    async preload() {
-        switch (this._mode) {
-            case MODEL_TYPE.OCR: {
-                await this._loadOcrOrtSession();
-                break;
-            }
-            case MODEL_TYPE.OCR_BETA: {
-                await this._loadBetaOcrOrtSession();
-                break;
-            }
-        }
-
-        return this;
+    enableBetaOcr(value) {
+        this._isBetaOcrEnable = value;
     }
 
+    /**
+     * Sets the mode of the OCR model.
+     * 
+     * @deprecated This method is deprecated. Please use `enableBetaOcr` to enable or disable the beta OCR mode.
+     * 
+     */
     setMode(mode) {
         switch (mode) {
-            case MODEL_TYPE.OCR: 
+            case MODEL_TYPE.OCR: {
+                this.enableBetaOcr(false);
+                break;
+            }
             case MODEL_TYPE.OCR_BETA: {
-                this._mode = mode;
+                this.enableBetaOcr(true);
                 break;
             }
             default: {
@@ -97,15 +94,11 @@ class DdddOcr {
         return this._ocrBetaOrtSessionPending;
     }
 
-    _loadCharset(charsetPath = this._charsetPath) {
-        if (!this._charsetPending) {
-            this._charsetPending = fsm.readFile(charsetPath, { encoding: 'utf-8' })
-                .then((result) => {
-                    return JSON.parse(result);
-                });
-        }
-
-        return this._charsetPending;
+    async _loadCharset(charsetPath = this._charsetPath) {
+        return fsm.readFile(charsetPath, { encoding: 'utf-8' })
+            .then((result) => {
+                return JSON.parse(result);
+            });
     }
 
     setValidCharSet(charset) {
@@ -217,7 +210,7 @@ class DdddOcr {
     }
 
     async _run(inputTensor) {
-        if (this._mode == MODEL_TYPE.OCR_BETA) {
+        if (this._isBetaOcrEnable) {
             return this._runOcrBeta(inputTensor);
         }
 
