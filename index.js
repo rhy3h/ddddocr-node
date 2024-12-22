@@ -281,9 +281,9 @@ class DdddOcr {
         const targetHeight = 64;
         const targetWidth = Math.floor(width * (targetHeight / height));
         image.resize({
-                w: targetWidth, 
-                h: targetHeight
-            });
+            w: targetWidth, 
+            h: targetHeight
+        });
         image.greyscale();
 
         const { data } = image.bitmap;
