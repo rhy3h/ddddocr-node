@@ -16,6 +16,7 @@ npm install ddddocr-node
 
  - Basic OCR recognition capability
  - OCR probability output
+ - Object detection capability
 
 ### Basic OCR recognition capability
 
@@ -80,8 +81,20 @@ const result = await ddddOcr.classification('example.jpg');
 console.log(result);
 ```
 
+## Object detection capability
+
+The main purpose is to quickly detect the possible location of the target object in the image. Since the detected target may not necessarily be text, this function only provides the bounding box (bbox) location of the target. In object detection, we typically use a bbox (bounding box) to describe the target location. A bbox is a rectangular frame, which can be determined by the x and y coordinates of the top-left corner and the x and y coordinates of the bottom-right corner.
+
+```js
+const { DdddOcr } = require('ddddocr-node');
+
+const ddddOcr = new DdddOcr();
+
+const result = await ddddOcr.detection('example.jpg');
+console.log(result);
+```
+
 ## Futures
 
- - Object detection capability
  - Slider detection
  - Import custom OCR training model
