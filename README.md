@@ -94,6 +94,35 @@ const result = await ddddOcr.detection('example.jpg');
 console.log(result);
 ```
 
+If you want to add the detected bounding box to the original image, here is an example.
+
+```js
+const { Jimp, cssColorToHex } = require('jimp');
+
+const { DdddOcr } = require('ddddocr-node');
+const { drawRectangle } = require('ddddocr-node/image-utils');
+
+const ddddOcr = new DdddOcr();
+
+const result = await ddddOcr.detection('example.jpg');
+
+const image = await Jimp.read('example.jpg');
+const color = cssColorToHex('#ff0000');
+for (let i = 0; i < result.length; i++) {
+    const [x1, y1, x2, y2] = result[i];
+
+    const points = [
+        { x: x1, y: y1 },
+        { x: x2, y: y1 },
+        { x: x2, y: y2 },
+        { x: x1, y: y2 }
+    ];
+    drawRectangle(image, points, color);
+};
+
+image.write('output.jpg');
+```
+
 ## Futures
 
  - Slider detection
