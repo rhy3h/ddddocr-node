@@ -118,7 +118,7 @@ for (let i = 0; i < result.length; i++) {
         { x: x1, y: y2 }
     ];
     drawRectangle(image, points, color);
-};
+}
 
 image.write('output.jpg');
 ```
