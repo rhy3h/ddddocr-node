@@ -48,6 +48,8 @@ class DdddOcr {
 
     enableBetaOcr(value) {
         this._isBetaOcrEnable = value;
+
+        return this;
     }
 
     /**
