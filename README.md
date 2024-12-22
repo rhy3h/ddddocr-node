@@ -30,18 +30,18 @@ const result = await ddddOcr.classification('example.jpg');
 console.log(result);
 ```
 
-This library includes two built-in OCR models, which do not switch automatically by default. You need to use `setMode()` with parameters to switch between them.
+This library includes two built-in OCR models, which do not switch automatically by default. You need to use `enableBetaOcr()` with parameters to switch between them.
 
 
 ```js
 const { DdddOcr, MODEL_TYPE } = require('ddddocr-node');
 
-// Method 1: Set the mode after creating the instance
+// Method 1: Enable the beta OCR after creating the instance
 const ddddOcr = new DdddOcr();
-ddddOcr.setMode(MODEL_TYPE.OCR);
+ddddOcr.enableBetaOcr(true);
 
-// Method 2: Set the mode during instance creation
-const ddddOcr = new DdddOcr().setMode(MODEL_TYPE.OCR);
+// Method 2: Enable the beta OCR during instance creation
+const ddddOcr = new DdddOcr().enableBetaOcr(true);
 
 const result = await ddddOcr.classification('example.jpg');
 console.log(result);
