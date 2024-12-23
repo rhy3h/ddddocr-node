@@ -26,7 +26,7 @@ const assert = require('assert');
     ddddOcr.setRanges('');
     ddddOcr.setOcrMode(MODEL_TYPE.OCR_BETA);
     const ocrBetaResult = await ddddOcr.classification('./test/example-ch.jpg');
-    assert.strictEqual(ocrBetaResult, '九乘六等于？', 'OCR string case Error');
+    assert.strictEqual(ocrBetaResult, '九乘六等于？', 'OCR beta case Error');
 
     const detectionResult = await ddddOcr.detection('./test/example-ch.jpg');
     assert.deepEqual(
