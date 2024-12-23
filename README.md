@@ -33,18 +33,17 @@ const result = await ddddOcr.classification('example.jpg');
 console.log(result);
 ```
 
-This library includes two built-in OCR models, which do not switch automatically by default. You need to use `enableBetaOcr()` with parameters to switch between them.
-
+This library includes two built-in OCR models, which do not switch automatically by default. You need to use `setOcrMode()` with parameters to switch between them.
 
 ```js
 const { DdddOcr, MODEL_TYPE } = require('ddddocr-node');
 
-// Method 1: Enable the beta OCR after creating the instance
+// Method 1: Enable Beta OCR mode after creating an instance
 const ddddOcr = new DdddOcr();
-ddddOcr.enableBetaOcr(true);
+ddddOcr.setOcrMode(MODEL_TYPE.OCR_BETA);
 
-// Method 2: Enable the beta OCR during instance creation
-const ddddOcr = new DdddOcr().enableBetaOcr(true);
+// Method 2: Directly enable Beta OCR mode during instance creation
+const ddddOcr = new DdddOcr().setOcrMode(MODEL_TYPE.OCR_BETA);
 
 const result = await ddddOcr.classification('example.jpg');
 console.log(result);
@@ -102,7 +101,7 @@ If you want to add the detected bounding box to the original image, here is an e
 const { Jimp, cssColorToHex } = require('jimp');
 
 const { DdddOcr } = require('ddddocr-node');
-const { drawRectangle } = require('ddddocr-node/image-utils');
+const { drawRectangle } = require('ddddocr-node/core/utils/image-utils');
 
 const ddddOcr = new DdddOcr();
 
