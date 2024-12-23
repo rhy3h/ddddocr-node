@@ -11,14 +11,53 @@ const { drawRectangle } = require('./image-utils');
 
 const { tensorflowToImage, arrayToImage } = require('./debug-utils');
 
+/**
+ * Charset range constants that define different character sets for OCR.
+ * These constants represent various combinations of character types (lowercase, uppercase, numeric).
+ * 
+ * @readonly
+ * @enum {number}
+ */
 const CHARSET_RANGE = {
+    /**
+     * Character set containing only numeric characters.
+     * @type {number}
+     */
     NUM_CASE: 0,
+    /**
+     * Character set containing only lowercase characters.
+     * @type {number}
+     */
     LOWWER_CASE: 1,
+    /**
+     * Character set containing only uppercase characters.
+     * @type {number}
+     */
     UPPER_CASE: 2,
+    /**
+     * Character set containing both lowercase and uppercase characters.
+     * @type {number}
+     */
     MIX_LOWWER_UPPER_CASE: 3,
+    /**
+     * Character set containing both lowercase and numeric characters.
+     * @type {number}
+     */
     MIX_LOWWER_NUM_CASE: 4,
+    /**
+     * Character set containing both uppercase and numeric characters.
+     * @type {number}
+     */
     MIX_UPPER_NUM_CASE: 5,
+    /**
+     * Character set containing lowercase, uppercase, and numeric characters.
+     * @type {number}
+     */
     MIX_LOWWER_UPPER_NUM_CASE: 6,
+    /**
+     * Character set containing neither lowercase, uppercase, nor numeric characters.
+     * @type {number}
+     */
     NO_LOWEER_UPPER_NUM_CASE: 7,
 }
 
@@ -30,30 +69,92 @@ const MIX_LOWWER_NUM_CASE = LOWWER_CASE + NUM_CASE;
 const MIX_UPPER_NUM_CASE = UPPER_CASE + NUM_CASE;
 const MIX_LOWER_UPPER_NUM_CASE = LOWWER_CASE + UPPER_CASE + NUM_CASE;
 
+/**
+ * Model type constants representing different OCR models.
+ * 
+ * @readonly
+ * @enum {number}
+ */
 const MODEL_TYPE = {
+    /**
+     * OCR model type.
+     * @type {number}
+     */
     OCR: 0,
+    /**
+     * OCR Beta model type.
+     * @type {number}
+     */
     OCR_BETA: 1
 }
 
 class DdddOcr {
+    /**
+     * @type {string} Path to the ONNX model for standard OCR.
+     * @private
+     */
     _ocrOnnxPath = path.join(__dirname, './onnx/common_old.onnx');
+    /**
+     * @type {string} Path to the charset file for standard OCR.
+     * @private
+     */
     _charsetPath = path.join(__dirname, './onnx/common_old.json');
 
+    /**
+     * @type {string} Path to the ONNX model for beta OCR.
+     * @private
+     */
     _ocrBetaOnnxPath = path.join(__dirname, './onnx/common.onnx');
+    /**
+     * @type {string} Path to the charset file for beta OCR.
+     * @private
+     */
     _charsetBetaPath = path.join(__dirname, './onnx/common.json');
 
+    /**
+     * @type {string} Path to the ONNX model for OCR detection.
+     * @private
+     */
     _ocrDetectionOnnxPath = path.join(__dirname, './onnx/common_det.onnx');
 
+    /**
+     * @type {Promise<ort.InferenceSession>|null} A promise for loading the OCR ONNX inference session.
+     * @private
+     */
     _ocrOrtSessionPending = null;
+    /**
+     * @type {Promise<ort.InferenceSession>|null} A promise for loading the OCR Beta ONNX inference session.
+     * @private
+     */
     _ocrBetaOrtSessionPending = null;
 
+     /**
+     * @type {Promise<ort.InferenceSession>|null} A promise for loading the OCR detection ONNX inference session.
+     * @private
+     */
     _ocrDetectionOrtSessionPending = null;
 
+    /**
+     * @type {Set<string>} A set of valid characters for OCR recognition.
+     * @private
+     */
     _validCharSet = new Set([]);
+    /**
+     * @type {Set<string>} A set of invalid characters for OCR recognition.
+     * @private
+     */
     _inValidCharSet = new Set([]);
 
+    /**
+     * @type {boolean} Flag indicating whether beta OCR is enabled.
+     * @private
+     */
     _isBetaOcrEnable = false;
 
+    /**
+     * @type {boolean} Flag indicating whether debugging is enabled.
+     * @private
+     */
     _isDebug = false;
 
     constructor() {}
@@ -113,6 +214,13 @@ class DdddOcr {
         return this;
     }
 
+    /**
+     * Loads the OCR ONNX model and charset asynchronously, storing the promises to avoid redundant loading.
+     * 
+     * @private
+     * @returns {Promise<Array<ort.InferenceSession, string[]>>} A promise that resolves with an array containing 
+     *          the OCR ONNX inference session and the charset.
+     */
     _loadOcrOrtSession() {
         if (!this._ocrOrtSessionPending) {
             const ocrOnnxPromise = ort.InferenceSession.create(this._ocrOnnxPath);
@@ -123,6 +231,13 @@ class DdddOcr {
         return this._ocrOrtSessionPending;
     }
 
+    /**
+     * Loads the OCR beta ONNX model and charset asynchronously, storing the promises to avoid redundant loading.
+     * 
+     * @private
+     * @returns {Promise<Array<ort.InferenceSession, string[]>>} A promise that resolves with an array containing 
+     *          the OCR beta ONNX inference session and the charset.
+     */
     _loadBetaOcrOrtSession() {
         if (!this._ocrBetaOrtSessionPending) {
             const ocrOnnxPromise = ort.InferenceSession.create(this._ocrBetaOnnxPath);
@@ -133,6 +248,12 @@ class DdddOcr {
         return this._ocrBetaOrtSessionPending;
     }
 
+    /**
+     * Loads the OCR detection ONNX model asynchronously, storing the promise to avoid redundant loading.
+     * 
+     * @private
+     * @returns {Promise<ort.InferenceSession>} A promise that resolves with the OCR detection ONNX inference session.
+     */
     _loadDetectionOrtSession() {
         if (!this._ocrDetectionOrtSessionPending) {
             const ocrOnnxPromise = ort.InferenceSession.create(this._ocrDetectionOnnxPath);
@@ -146,10 +267,10 @@ class DdddOcr {
      * Loads a character set from a specified file path.
      * 
      * @private
-     * @param {string} [charsetPath=this._charsetPath] - The file path to the character set. Defaults to `this._charsetPath` if not provided. 
+     * @param {string} charsetPath - The file path to the character set. 
      * @returns {Promise<string[]>}
      */
-    async _loadCharset(charsetPath = this._charsetPath) {
+    async _loadCharset(charsetPath) {
         return fsm.readFile(charsetPath, { encoding: 'utf-8' })
             .then((result) => {
                 return JSON.parse(result);
