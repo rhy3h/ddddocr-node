@@ -19,9 +19,8 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "docs": "rimraf docs && jsdoc --configure jsdoc.json --verbose",
-    "deploy": "gh-pages -d docs",
-    "test": "node test/test.js"
+    "test": "node test/test.js",
+    "publish": "npm run test && npm publish"
   },
   "dependencies": {
     "@tensorflow/tfjs": "^4.22.0",
@@ -29,7 +28,6 @@
     "onnxruntime-node": "^1.20.1"
   },
   "devDependencies": {
-    "gh-pages": "^6.2.0",
     "jsdoc": "^4.0.4",
     "minami": "^1.2.3",
     "rimraf": "^6.0.1",
