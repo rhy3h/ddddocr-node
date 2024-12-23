@@ -88,6 +88,10 @@ const MODEL_TYPE = {
     OCR_BETA: 1
 }
 
+/**
+ * Class representing an OCR (Optical Character Recognition) model.
+ * @class DdddOcr
+ */
 class DdddOcr {
     /**
      * @type {string} Path to the ONNX model for standard OCR.
