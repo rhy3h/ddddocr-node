@@ -131,21 +131,12 @@ class DdddOcr {
      * Sets the range restriction for OCR results.
      * 
      * This method restricts the characters returned by OCR based on the input:
-     * - For `number` input, it applies a predefined character set. Supported values are:
-     *   - `0`: Digits (0-9)
-     *   - `1`: Lowercase letters (a-z)
-     *   - `2`: Uppercase letters (A-Z)
-     *   - `3`: Lowercase + Uppercase letters
-     *   - `4`: Lowercase letters + Digits
-     *   - `5`: Uppercase letters + Digits
-     *   - `6`: Lowercase + Uppercase letters + Digits
-     *   - `7`: Default set (a-z, A-Z, 0-9)
+     * - For `number` input, it applies a predefined character set. See the `CHARSET_RANGE` type for the available options.
      * - For `string` input, each character in the string is treated as a valid OCR result.
      * 
      * @public
-     * @param {number|string} charsetRange - A number for predefined character sets or a string for a custom character set.
+     * @param {CHARSET_RANGE} charsetRange - A number for predefined character sets or a string for a custom character set.
      * @returns {DdddOcr} The current instance for method chaining.
-     * @throws {Error} Throws an error if the input type or value is not supported.`
      */
     setRanges(charsetRange) {
         this._ocr.setRanges(charsetRange);
