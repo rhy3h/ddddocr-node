@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Home - Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <li class="nav-link nav-home-link"><a href="index.html">Home</a></li><li class="nav-heading"><a href="global.html">Globals</a></li><li class="nav-item"><span class="nav-item-type type-member">M</span><span class="nav-item-name"><a href="global.html#CHARSET_RANGE">CHARSET_RANGE</a></span></li><li class="nav-item"><span class="nav-item-type type-member">M</span><span class="nav-item-name"><a href="global.html#MODEL_TYPE">MODEL_TYPE</a></span></li>
+</nav>
+
+<div id="main">
+    
+
+    
+
+
+
+    
+
+
+
+
+
+
+
+
+
+    
+
+
+    <section class="readme">
+        <article><h1>DdddOcr Node</h1>
+<p><a href="https://www.npmjs.com/package/ddddocr-node"><img src="https://img.shields.io/npm/v/ddddocr-node.svg" alt="npm"></a></p>
+<p>This project is a port of the Python project <a href="https://github.com/sml2h3/ddddocr">DdddOcr</a>.</p>
+<p>The goal is to make it easy to use this trained model for text detection in JavaScript.</p>
+<h2>Installation</h2>
+<pre class="prettyprint source lang-sh"><code>npm install ddddocr-node
+</code></pre>
+<h2>Features</h2>
+<ul>
+<li>Basic OCR recognition capability</li>
+<li>OCR probability output</li>
+<li>Object detection capability</li>
+</ul>
+<h3>Basic OCR recognition capability</h3>
+<p>Primarily used for recognizing single-line text, where the text occupies the main portion of the image, such as common alphanumeric captchas. This project can recognize Chinese characters, English (with random case sensitivity or case constrained by specified ranges), numbers, and certain special characters.</p>
+<pre class="prettyprint source lang-js"><code>const { DdddOcr } = require('ddddocr-node');
+
+const ddddOcr = new DdddOcr();
+
+const result = await ddddOcr.classification('example.jpg');
+console.log(result);
+</code></pre>
+<p>This library includes two built-in OCR models, which do not switch automatically by default. You need to use <code>enableBetaOcr()</code> with parameters to switch between them.</p>
+<pre class="prettyprint source lang-js"><code>const { DdddOcr, MODEL_TYPE } = require('ddddocr-node');
+
+// Method 1: Enable the beta OCR after creating the instance
+const ddddOcr = new DdddOcr();
+ddddOcr.enableBetaOcr(true);
+
+// Method 2: Enable the beta OCR during instance creation
+const ddddOcr = new DdddOcr().enableBetaOcr(true);
+
+const result = await ddddOcr.classification('example.jpg');
+console.log(result);
+</code></pre>
+<h3>OCR probability output</h3>
+<p>To provide more flexible control and range restriction for OCR results, the project supports setting range limitations on OCR results.</p>
+<p>The <code>setRanges()</code> method restricts the returned characters.</p>
+<p>This method accepts one parameter. If the input is of type <code>int</code>, it refers to a predefined character set restriction. If the input is of type <code>string</code>, it represents a custom character set.</p>
+<p>For int input, please refer to the table below.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter <br/> Value</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Pure integers 0-9</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Pure lowercase letters a-z</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Pure uppercase letters A-Z</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Lowercase letters a-z + uppercase letters A-Z</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Lowercase letters a-z + integers 0-9</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Uppercase letters A-Z + integers 0-9</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Lowercase letters a-z + uppercase letters A-Z + integers 0-9</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Default character set - lowercase a-z, uppercase A-Z, and integers 0-9</td>
+</tr>
+</tbody>
+</table>
+<p>For <code>string</code> input, provide a string where each character is treated as a candidate character, e.g., <code>&quot;0123456789+-x/=&quot;</code>.</p>
+<pre class="prettyprint source lang-js"><code>const { DdddOcr, CHARSET_RANGE } = require('ddddocr-node');
+
+const ddddOcr = new DdddOcr();
+ddddOcr.setRanges(CHARSET_RANGE.NUM_CASE);
+
+const result = await ddddOcr.classification('example.jpg');
+console.log(result);
+</code></pre>
+<h2>Object detection capability</h2>
+<p>The main purpose is to quickly detect the possible location of the target object in the image. Since the detected target may not necessarily be text, this function only provides the bounding box (bbox) location of the target. In object detection, we typically use a bbox (bounding box) to describe the target location. A bbox is a rectangular frame, which can be determined by the x and y coordinates of the top-left corner and the x and y coordinates of the bottom-right corner.</p>
+<pre class="prettyprint source lang-js"><code>const { DdddOcr } = require('ddddocr-node');
+
+const ddddOcr = new DdddOcr();
+
+const result = await ddddOcr.detection('example.jpg');
+console.log(result);
+</code></pre>
+<p>If you want to add the detected bounding box to the original image, here is an example.</p>
+<pre class="prettyprint source lang-js"><code>const { Jimp, cssColorToHex } = require('jimp');
+
+const { DdddOcr } = require('ddddocr-node');
+const { drawRectangle } = require('ddddocr-node/image-utils');
+
+const ddddOcr = new DdddOcr();
+
+const result = await ddddOcr.detection('example.jpg');
+
+const image = await Jimp.read('example.jpg');
+const color = cssColorToHex('#ff0000');
+for (let i = 0; i &lt; result.length; i++) {
+    const [x1, y1, x2, y2] = result[i];
+
+    const points = [
+        { x: x1, y: y1 },
+        { x: x2, y: y1 },
+        { x: x2, y: y2 },
+        { x: x1, y: y2 }
+    ];
+    drawRectangle(image, points, color);
+}
+
+image.write('output.jpg');
+</code></pre>
+<h2>Futures</h2>
+<ul>
+<li>Slider detection</li>
+<li>Import custom OCR training model</li>
+</ul></article>
+    </section>
+
+
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.7</a> on Mon Dec 23 2024 10:11:58 GMT+0000 (Coordinated Universal Time) using the Minami theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>
