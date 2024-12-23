@@ -40,4 +40,6 @@ const assert = require('assert');
         ],
         'Detection Error'
     );
+
+    console.log('[TEST] SUCESS');
 })();
