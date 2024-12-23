@@ -58,12 +58,23 @@ class DdddOcr {
 
     constructor() {}
 
+    /**
+     * Enables or disables the beta OCR feature.
+     * 
+     * @param {boolean} value A boolean value indicating whether to enable (true) or disable (false) the beta OCR feature.
+     * @returns {DdddOcr} The current instance for method chaining.
+     */
     enableBetaOcr(value) {
         this._isBetaOcrEnable = value;
 
         return this;
     }
 
+    /**
+     * Enables the debug mode and prepares the debug folder.
+     * 
+     * @returns {DdddOcr} The current instance for method chaining.
+     */
     enableDebug() {
         this._isDebug = true;
 
@@ -131,6 +142,13 @@ class DdddOcr {
         return this._ocrBetaOrtSessionPending;
     }
 
+    /**
+     * Loads a character set from a specified file path.
+     * 
+     * @private
+     * @param {string} [charsetPath=this._charsetPath] - The file path to the character set. Defaults to `this._charsetPath` if not provided. 
+     * @returns {Promise<string[]>}
+     */
     async _loadCharset(charsetPath = this._charsetPath) {
         return fsm.readFile(charsetPath, { encoding: 'utf-8' })
             .then((result) => {
@@ -138,14 +156,39 @@ class DdddOcr {
             });
     }
 
+    /**
+     * Sets the valid character set.
+     * 
+     * @public
+     * @param {string} charset - A string containing the characters to define the valid character set.
+     * @returns {DdddOcr} The current instance for method chaining.
+     */
     setValidCharSet(charset) {
         this._validCharSet = new Set(charset);
+
+        return this;
     }
 
+    /**
+     * Sets the invalid character set.
+     * 
+     * @public
+     * @param {string} charset - A string containing the characters to define the invalid character set.
+     * @returns {DdddOcr} The current instance for method chaining.
+     */
     setInValidCharset(charset) {
         this._inValidCharSet = new Set(charset);
+
+        return this;
     }
 
+    /**
+     * Checks if a character is valid based on the defined valid and invalid character sets.
+     * 
+     * @private
+     * @param {string} char - The character to validate.
+     * @returns {boolean} `true` if the character is valid, `false` otherwise.
+     */
     _isValidChar(char) {
         if (this._inValidCharSet.has(char)) {
             return false;
@@ -158,7 +201,27 @@ class DdddOcr {
         return this._validCharSet.has(char);
     }
 
-    async setRanges(charsetRange) {
+    /**
+     * Sets the range restriction for OCR results.
+     * 
+     * This method restricts the characters returned by OCR based on the input:
+     * - For `number` input, it applies a predefined character set. Supported values are:
+     *   - `0`: Digits (0-9)
+     *   - `1`: Lowercase letters (a-z)
+     *   - `2`: Uppercase letters (A-Z)
+     *   - `3`: Lowercase + Uppercase letters
+     *   - `4`: Lowercase letters + Digits
+     *   - `5`: Uppercase letters + Digits
+     *   - `6`: Lowercase + Uppercase letters + Digits
+     *   - `7`: Default set (a-z, A-Z, 0-9)
+     * - For `string` input, each character in the string is treated as a valid OCR result.
+     * 
+     * @public
+     * @param {number|string} charsetRange - A number for predefined character sets or a string for a custom character set.
+     * @returns {DdddOcr} The current instance for method chaining.
+     * @throws {Error} Throws an error if the input type or value is not supported.`
+     */
+    setRanges(charsetRange) {
         switch (typeof(charsetRange)) {
             case 'number': {
                 switch (charsetRange) {
@@ -212,6 +275,19 @@ class DdddOcr {
         return this;
     }
 
+    /**
+     * Runs OCR processing on the provided input tensor using an ORT session.
+     * 
+     * This method waits for the OCR session to be loaded (if not already loaded) and then processes the input tensor to extract OCR results.
+     * It returns the processed data including the `cpuData`, `dims`, and the associated `charset`.
+     * 
+     * @private
+     * @param {ort.Tensor} inputTensor - The input tensor to process for OCR.
+     * @returns {Promise<{cpuData: Float32Array, dims: number[], charset: string}>} A promise that resolves to an object containing:
+     *   - `cpuData`: The raw OCR data as a `Float32Array`.
+     *   - `dims`: The dimensions of the result tensor.
+     *   - `charset`: The character set used for OCR processing.
+     */
     async _runOcr(inputTensor) {
         if (!this._ocrOrtSessionPending) {
             this._loadOcrOrtSession();
@@ -229,6 +305,19 @@ class DdddOcr {
         };
     }
 
+    /**
+     * Runs OCR Beta processing on the provided input tensor using an ORT session.
+     * 
+     * This method waits for the OCR Beta session to be loaded (if not already loaded) and then processes the input tensor to extract OCR results.
+     * It returns the processed data including the `cpuData`, `dims`, and the associated `charset`.
+     * 
+     * @private
+     * @param {ort.Tensor} inputTensor - The input tensor to process for OCR Beta.
+     * @returns {Promise<{cpuData: Float32Array, dims: number[], charset: string}>} A promise that resolves to an object containing:
+     *   - `cpuData`: The raw OCR Beta data as a `Float32Array`.
+     *   - `dims`: The dimensions of the result tensor.
+     *   - `charset`: The character set used for OCR Beta processing.
+     */
     async _runOcrBeta(inputTensor) {
         if (!this._ocrBetaOrtSessionPending) {
             this._loadBetaOcrOrtSession();
@@ -246,6 +335,18 @@ class DdddOcr {
         };
     }
 
+    /**
+     * Runs OCR processing (either standard or beta) on the provided input tensor based on the OCR mode.
+     * 
+     * If the beta OCR mode is enabled, it runs the OCR Beta processing. Otherwise, it runs the standard OCR processing.
+     * 
+     * @private
+     * @param {ort.Tensor} inputTensor - The input tensor to process for OCR.
+     * @returns {Promise<{cpuData: Float32Array, dims: number[], charset: string}>} A promise that resolves to the OCR result containing:
+     *   - `cpuData`: The raw OCR data as a `Float32Array`.
+     *   - `dims`: The dimensions of the result tensor.
+     *   - `charset`: The character set used for OCR processing.
+     */
     async _run(inputTensor) {
         if (this._isBetaOcrEnable) {
             return this._runOcrBeta(inputTensor);
@@ -254,6 +355,18 @@ class DdddOcr {
         return this._runOcr(inputTensor);
     }
 
+    /**
+     * Parses the given `argmaxData` array into a string using the provided character set.
+     * 
+     * The method iterates through the `argmaxData`, ensuring consecutive repeated items are skipped, 
+     * and converts the data into valid characters based on the provided `charset`. 
+     * The valid characters are checked using `_isValidChar`, and only valid characters are included in the final result.
+     * 
+     * @private
+     * @param {number[]} argmaxData - An array of indices representing the OCR output. Each element corresponds to a character index in the `charset`.
+     * @param {string[]} charset - An array of characters corresponding to the indices in `argmaxData`.
+     * @returns {string} The parsed string formed by valid characters from `argmaxData` based on `charset`.
+     */
     _parseToChar(argmaxData, charset) {
         const result = [];
 
@@ -274,8 +387,14 @@ class DdddOcr {
         return result.join('');
     }
 
-    async classification(img) {
-        const image = await Jimp.read(img);
+    /**
+     * Classifies an image by running it through an OCR model.
+     * 
+     * @param {string | Buffer | ArrayBuffer} url - The image to classify. It can be a file path (string) or image data (Buffer).
+     * @returns {Promise<string>} A promise that resolves to the OCR result, represented as a string of recognized characters.
+     */
+    async classification(url) {
+        const image = await Jimp.read(url);
 
         const { width, height } = image.bitmap;
         const targetHeight = 64;
@@ -316,7 +435,17 @@ class DdddOcr {
         return result['output'];
     }
 
-    preProcessImage(image, inputSize) {
+    /**
+     * Pre-processes an image by resizing and converting it into a tensor format.
+     * 
+     * @private
+     * @param {Jimp} image - The image to pre-process. It is assumed to be a `Jimp` image object.
+     * @param {number[]} inputSize - The target input size [height, width] for the model.
+     * @returns {{inputTensor: ort.Tensor, ratio: number}} An object containing:
+     *   - `inputTensor`: The pre-processed image converted into a tensor for model input.
+     *   - `ratio`: The resizing ratio used to scale the image dimensions.
+     */
+    _preProcessImage(image, inputSize) {
         const grayBgImage = tf.fill([inputSize[1], inputSize[0], 3], 114, 'float32');
 
         if (this._isDebug) {
@@ -366,7 +495,15 @@ class DdddOcr {
         }
     }
 
-    demoPostProcess(outputTensor, imageSize) {
+    /**
+     * Post-processes the output tensor.
+     * 
+     * @private
+     * @param {ort.Tensor} outputTensor - The output tensor from the model, containing raw bounding box predictions.
+     * @param {number[]} imageSize - The original image size [height, width].
+     * @returns {tf.Tensor} A tensor containing the post-processed bounding box coordinates.
+     */
+    _demoPostProcess(outputTensor, imageSize) {
         const grids = [];
         const expandedStrides = [];
 
@@ -427,9 +564,12 @@ class DdddOcr {
     }
 
     /**
+     * Calculates bounding box coordinates.
      * 
-     * @param {tf.Tensor} boxes 
-     * @param {number} ratio 
+     * @private
+     * @param {tf.Tensor} boxes - A tensor containing bounding box coordinates in the format [centerX, centerY, width, height].
+     * @param {number} ratio - The ratio by which to adjust the bounding box coordinates.
+     * @returns {tf.Tensor} A tensor containing the calculated bounding box coordinates in the format [xMin, yMin, xMax, yMax].
      */
     _calcBbox(boxes, ratio) {
         const boxesOutput = boxes.arraySync();
@@ -451,7 +591,15 @@ class DdddOcr {
 
         return resultTensor;
     }
-
+    
+    /**
+     * Extracts the bounding box coordinates (x1, y1, x2, y2) from the given boxes based on the specified order.
+     * 
+     * @private
+     * @param {Array} boxes - An array of bounding boxes, where each box is represented as [x1, y1, x2, y2].
+     * @param {Array<number>} [orders=undefined] - An optional array of indices specifying the order in which to extract the boxes. If not provided, the boxes are extracted in the original order.
+     * @returns {Array<tf.Tensor>} An array of tensors representing the extracted coordinates: [x1, y1, x2, y2].
+     */
     _getCurrentBox(boxes, orders = undefined) {
         if (orders == undefined) {
             orders = Array.from({ length: boxes.length }, (_, i) => i);
@@ -479,6 +627,14 @@ class DdddOcr {
         ];
     }
 
+    /**
+     * Filters the indices of an array based on the given threshold. Only indices where the corresponding value is less than or equal to the threshold are returned.
+     * 
+     * @private
+     * @param {Array<number>} ovr - An array of values to be compared against the threshold.
+     * @param {number} nmsThr - The threshold value. Indices with values less than or equal to this threshold will be included in the result.
+     * @returns {Array<number>} An array of indices where the corresponding value in `ovr` is less than or equal to `nmsThr`.
+     */
     _where(ovr, nmsThr) {
         const result = [];
 
@@ -491,6 +647,15 @@ class DdddOcr {
         return result;
     }
 
+    /**
+     * Single class NMS implemented in JS.
+     * 
+     * @private
+     * @param {Array<Array<number>>} boxes - An array of bounding boxes, where each box is represented as [x1, y1, x2, y2].
+     * @param {Array<number>} scores - An array of scores corresponding to each bounding box.
+     * @param {number} nmsThr - The threshold for the overlap ratio. Boxes with an overlap greater than this threshold will be suppressed.
+     * @returns {Array<number>} An array of indices representing the boxes that are kept after NMS.
+     */
     _nms(boxes, scores, nmsThr) {
         let order = argSort(scores);
         const keep = [];
@@ -526,6 +691,16 @@ class DdddOcr {
         return keep;
     }
 
+    /**
+     * Multiclass NMS implemented in JS. Class-agnostic version.
+     * 
+     * @private
+     * @param {Array<Array<number>>} boxes - An array of bounding boxes, where each box is represented as [x1, y1, x2, y2].
+     * @param {Array<Array<number>>} scores - An array of scores for each bounding box, typically representing object detection confidence.
+     * @param {number} nmsThr - The threshold for the overlap ratio. Boxes with an overlap greater than this threshold will be suppressed.
+     * @param {number} scoreThr - The threshold for the score. Only boxes with a score greater than this threshold will be considered for NMS.
+     * @returns {Array<Array<number>>} An array of bounding boxes after NMS, where each box is represented as [x1, y1, x2, y2].
+     */
     _multiclassNmsClassAgnostic(boxes, scores, nmsThr, scoreThr) {
         const clsScores = scores.flatten().arraySync();
         const clsBoxes = boxes.arraySync();
@@ -553,20 +728,43 @@ class DdddOcr {
         return detections;
     }
 
+    /**
+     * Multiclass NMS implemented in JS.
+     * 
+     * @private
+     * @param {Array<Array<number>>} boxes - An array of bounding boxes, where each box is represented as [x1, y1, x2, y2].
+     * @param {Array<Array<number>>} scores - An array of scores for each bounding box, typically representing object detection confidence.
+     * @param {number} nmsThr - The threshold for the overlap ratio. Boxes with an overlap greater than this threshold will be suppressed.
+     * @param {number} scoreThr - The threshold for the score. Only boxes with a score greater than this threshold will be considered for NMS.
+     * @returns {Array<Array<number>>} An array of bounding boxes after NMS, where each box is represented as [x1, y1, x2, y2].
+     */
     _multiclassNms(boxes, scores, nmsThr, scoreThr) {
         return this._multiclassNmsClassAgnostic(boxes, scores, nmsThr, scoreThr);
     }
 
-    async getBbox(image) {
+    /**
+     * Processes an image to detect bounding boxes and returns the adjusted bounding boxes 
+     * based on the detection results.
+     * 
+     * This method preprocesses the image, runs detection, post-processes the results, 
+     * applies Non-Maximum Suppression (NMS), and adjusts the bounding box coordinates 
+     * according to the original image size.
+     *
+     * @private
+     * @param {Object} image - The image object to process. It should contain the bitmap data.
+     * @returns {Promise<Array<Array<number>>>} A promise that resolves to an array of bounding boxes, 
+     *          where each box is represented as [x1, y1, x2, y2], adjusted to the image size.
+     */
+    async _getBbox(image) {
         const inputSize = [416, 416];
 
         const { width, height } = image.bitmap;
 
-        const { inputTensor, ratio } = this.preProcessImage(image, inputSize);
+        const { inputTensor, ratio } = this._preProcessImage(image, inputSize);
 
         const outputTensor = await this._runDetection(inputTensor);
 
-        const predictions = this.demoPostProcess(outputTensor, inputSize);
+        const predictions = this._demoPostProcess(outputTensor, inputSize);
 
         const boxes = predictions.slice([0, 0], [-1, 4]);
         const scores = predictions.slice([0, 4], [-1, 1]).mul(predictions.slice([0, 5], [-1, 1]));
@@ -598,10 +796,22 @@ class DdddOcr {
         return result;
     }
 
-    async detection(img) {
-        const image = await Jimp.read(img);
+    /**
+     * Detects objects in an image by extracting bounding boxes and optionally 
+     * visualizing the detection results on the image.
+     * 
+     * This method reads the image, retrieves bounding boxes, and then optionally 
+     * draws the detected bounding boxes on the image if debugging is enabled.
+     * 
+     * @public
+     * @param {string | Buffer | ArrayBuffer} url - The image to classify. It can be a file path (string) or image data (Buffer).
+     * @returns {Promise<Array<Array<number>>>} A promise that resolves to an array of bounding boxes, 
+     *          where each box is represented as [x1, y1, x2, y2], adjusted to the image size.
+     */
+    async detection(url) {
+        const image = await Jimp.read(url);
 
-        const result = await this.getBbox(image.clone());
+        const result = await this._getBbox(image.clone());
 
         if (this._isDebug) {
             const color = cssColorToHex('#ff0000');
