@@ -60,8 +60,8 @@ class Detection {
      * @private
      * @param {Jimp} image - The image to pre-process. It is assumed to be a `Jimp` image object.
      * @param {number[]} inputSize - The target input size [height, width] for the model.
-     * @returns {{inputTensor: ort.Tensor, ratio: number}} An object containing:
-     *   - `inputTensor`: The pre-processed image converted into a tensor for model input.
+     * @returns {{inputArray: Float32Array, ratio: number}} An object containing:
+     *   - `inputArray`: The pre-processed image converted into a Float32Array for model input.
      *   - `ratio`: The resizing ratio used to scale the image dimensions.
      */
     _preProcessImage(image, inputSize) {
@@ -104,12 +104,10 @@ class Detection {
         }
 
         const transposedImg = backToTensorImg.transpose([2, 0, 1]);
-        let flatArray = transposedImg.dataSync();
-
-        const inputTensor = new ort.Tensor('float32', flatArray, [1, 3, inputSize[0], inputSize[1]]);
+        const inputArray = transposedImg.dataSync();
 
         return {
-            inputTensor,
+            inputArray,
             ratio
         }
     }
@@ -118,11 +116,12 @@ class Detection {
      * Post-processes the output tensor.
      * 
      * @private
-     * @param {ort.Tensor} outputTensor - The output tensor from the model, containing raw bounding box predictions.
+     * @param {Float32Array} cpuData - The raw OCR data as a `Float32Array`.
+     * @param {number[]} dims - The dimensions of the result tensor.
      * @param {number[]} imageSize - The original image size [height, width].
      * @returns {tf.Tensor} A tensor containing the post-processed bounding box coordinates.
      */
-    _demoPostProcess(outputTensor, imageSize) {
+    _demoPostProcess(cpuData, dims, imageSize) {
         const grids = [];
         const expandedStrides = [];
 
@@ -153,8 +152,6 @@ class Detection {
 
         const flatGrids = grids.flat();
         const flatExpandedStrides = expandedStrides.flat();
-
-        const { cpuData, dims } = outputTensor;
 
         const tensor = tf.tensor(cpuData);
         const reshapedTensor = tf.reshape(tensor, dims);
@@ -379,11 +376,12 @@ class Detection {
 
         const { width, height } = image.bitmap;
 
-        const { inputTensor, ratio } = this._preProcessImage(image, inputSize);
+        const { inputArray, ratio } = this._preProcessImage(image, inputSize);
+        const inputTensor = new ort.Tensor('float32', inputArray, [1, 3, inputSize[0], inputSize[1]]);
 
-        const outputTensor = await this._runDetection(inputTensor);
+        const { cpuData, dims } = await this._runDetection(inputTensor);
 
-        const predictions = this._demoPostProcess(outputTensor, inputSize);
+        const predictions = this._demoPostProcess(cpuData, dims, inputSize);
 
         const boxes = predictions.slice([0, 0], [-1, 4]);
         const scores = predictions.slice([0, 4], [-1, 1]).mul(predictions.slice([0, 5], [-1, 1]));
