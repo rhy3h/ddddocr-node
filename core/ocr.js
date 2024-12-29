@@ -62,7 +62,7 @@ const MIX_LOWWER_NUM_CASE = LOWWER_CASE + NUM_CASE;
 const MIX_UPPER_NUM_CASE = UPPER_CASE + NUM_CASE;
 const MIX_LOWER_UPPER_NUM_CASE = LOWWER_CASE + UPPER_CASE + NUM_CASE;
 
-class OCR {
+class OCRBase {
     /**
      * @type {string} Path to the ONNX model for standard OCR.
      * @private
@@ -94,23 +94,6 @@ class OCR {
     constructor(onnxPath, charsetPath) {
         this._ocrOnnxPath = onnxPath;
         this._charsetPath = charsetPath;
-    }
-
-    /**
-     * Loads the OCR ONNX model and charset asynchronously, storing the promises to avoid redundant loading.
-     * 
-     * @private
-     * @returns {Promise<Array<ort.InferenceSession, string[]>>} A promise that resolves with an array containing 
-     *          the OCR ONNX inference session and the charset.
-     */
-    _loadOcrOrtSession() {
-        if (!this._ocrOrtSessionPending) {
-            const ocrOnnxPromise = ort.InferenceSession.create(this._ocrOnnxPath);
-            const charsetPromise = this._loadCharset(this._charsetPath);
-            this._ocrOrtSessionPending = Promise.all([ocrOnnxPromise, charsetPromise]);
-        }
-
-        return this._ocrOrtSessionPending;
     }
 
     /**
@@ -247,52 +230,6 @@ class OCR {
     }
 
     /**
-     * Runs OCR processing on the provided input tensor using an ORT session.
-     * 
-     * This method waits for the OCR session to be loaded (if not already loaded) and then processes the input tensor to extract OCR results.
-     * It returns the processed data including the `cpuData`, `dims`, and the associated `charset`.
-     * 
-     * @private
-     * @param {ort.Tensor} inputTensor - The input tensor to process for OCR.
-     * @returns {Promise<{cpuData: Float32Array, dims: number[], charset: string}>} A promise that resolves to an object containing:
-     *   - `cpuData`: The raw OCR data as a `Float32Array`.
-     *   - `dims`: The dimensions of the result tensor.
-     *   - `charset`: The character set used for OCR processing.
-     */
-    async _runOcr(inputTensor) {
-        if (!this._ocrOrtSessionPending) {
-            this._loadOcrOrtSession();
-        }
-
-        const [ortSession, charset] = await this._ocrOrtSessionPending;
-        const result = await ortSession.run({ input1: inputTensor });
-
-        const { cpuData, dims } = result['387'];
-
-        return {
-            cpuData,
-            dims,
-            charset
-        };
-    }
-
-    /**
-     * Runs OCR processing (either standard or beta) on the provided input tensor based on the OCR mode.
-     * 
-     * If the beta OCR mode is enabled, it runs the OCR Beta processing. Otherwise, it runs the standard OCR processing.
-     * 
-     * @private
-     * @param {ort.Tensor} inputTensor - The input tensor to process for OCR.
-     * @returns {Promise<{cpuData: Float32Array, dims: number[], charset: string}>} A promise that resolves to the OCR result containing:
-     *   - `cpuData`: The raw OCR data as a `Float32Array`.
-     *   - `dims`: The dimensions of the result tensor.
-     *   - `charset`: The character set used for OCR processing.
-     */
-    async _run(inputTensor) {
-        return this._runOcr(inputTensor);
-    }
-
-    /**
      * Parses the given `argmaxData` array into a string using the provided character set.
      * 
      * The method iterates through the `argmaxData`, ensuring consecutive repeated items are skipped, 
@@ -324,13 +261,7 @@ class OCR {
         return result.join('');
     }
 
-    /**
-     * Classifies an image by running it through an OCR model.
-     * 
-     * @param {string | Buffer | ArrayBuffer} url - The image to classify. It can be a file path (string) or image data (Buffer).
-     * @returns {Promise<string>} A promise that resolves to the OCR result, represented as a string of recognized characters.
-     */
-    async classification(url) {
+    async _preProcessImage(url) {
         const image = await Jimp.read(url);
 
         const { width, height } = image.bitmap;
@@ -347,16 +278,92 @@ class OCR {
         for (let i = 0, j = 0; i < data.length; i += 4, j++) {
             floatData[j] = (data[i] / 255.0 - 0.5) / 0.5;
         }
-        const inputTensor = new ort.Tensor('float32', floatData, [1, 1, targetHeight, targetWidth]);
 
-        const { cpuData, dims, charset } = await this._run(inputTensor);
+        return {
+            floatData,
+            targetHeight,
+            targetWidth
+        };
+    }
 
+    async postProcess(cpuData, dims, charset) {
         const tensor = tf.tensor(cpuData);
         const reshapedTensor = tf.reshape(tensor, dims);
         const argmaxResult = tf.argMax(reshapedTensor, 2);
         const argmaxData = await argmaxResult.data();
 
         const result = this._parseToChar(argmaxData, charset);
+
+        return result;
+    }
+}
+
+class OCR extends OCRBase {
+    constructor(onnxPath, charsetPath) {
+        super(onnxPath, charsetPath);
+    }
+
+    /**
+     * Loads the OCR ONNX model and charset asynchronously, storing the promises to avoid redundant loading.
+     * 
+     * @private
+     * @returns {Promise<Array<ort.InferenceSession, string[]>>} A promise that resolves with an array containing 
+     *          the OCR ONNX inference session and the charset.
+     */
+    _loadOcrOrtSession() {
+        if (!this._ocrOrtSessionPending) {
+            const ocrOnnxPromise = ort.InferenceSession.create(this._ocrOnnxPath);
+            const charsetPromise = this._loadCharset(this._charsetPath);
+            this._ocrOrtSessionPending = Promise.all([ocrOnnxPromise, charsetPromise]);
+        }
+
+        return this._ocrOrtSessionPending;
+    }
+
+    /**
+     * Runs OCR processing on the provided input tensor using an ORT session.
+     * 
+     * This method waits for the OCR session to be loaded (if not already loaded) and then processes the input tensor to extract OCR results.
+     * It returns the processed data including the `cpuData`, `dims`, and the associated `charset`.
+     * 
+     * @private
+     * @param {ort.Tensor} inputTensor - The input tensor to process for OCR.
+     * @returns {Promise<{cpuData: Float32Array, dims: number[], charset: string}>} A promise that resolves to the OCR result containing:
+     *   - `cpuData`: The raw OCR data as a `Float32Array`.
+     *   - `dims`: The dimensions of the result tensor.
+     *   - `charset`: The character set used for OCR processing.
+     */
+    async _run(inputTensor) {
+        if (!this._ocrOrtSessionPending) {
+            this._loadOcrOrtSession();
+        }
+
+        const [ortSession, charset] = await this._ocrOrtSessionPending;
+        const result = await ortSession.run({ input1: inputTensor });
+
+        const { cpuData, dims } = result['387'];
+
+        return {
+            cpuData,
+            dims,
+            charset
+        };
+    }
+
+    /**
+     * Classifies an image by running it through an OCR model.
+     * 
+     * @param {string | Buffer | ArrayBuffer} url - The image to classify. It can be a file path (string) or image data (Buffer).
+     * @returns {Promise<string>} A promise that resolves to the OCR result, represented as a string of recognized characters.
+     */
+    async classification(url) {
+        const { floatData, targetHeight, targetWidth } = await this._preProcessImage(url);
+
+        const inputTensor = new ort.Tensor('float32', floatData, [1, 1, targetHeight, targetWidth]);
+
+        const { cpuData, dims, charset } = await this._run(inputTensor);
+
+        const result = await this.postProcess(cpuData, dims, charset);
 
         return result;
     }
