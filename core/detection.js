@@ -359,6 +359,38 @@ class Detection {
     }
 
     /**
+     * 
+     * 
+     * @param {Array<Array<number>>} prediction - An array of bounding boxes after NMS, where each box is represented as [x1, y1, x2, y2].
+     * @param {number} width - The width of image.
+     * @param {number} height - The heigth of image.
+     */
+    _parseToXyxy(prediction, width, height) {
+        const result = [];
+
+        let minX, maxX, minY, maxY;
+        for (let i = 0; i < prediction.length; i++) {
+            const [x1, y1, x2, y2] = prediction[i];
+
+            if (x1 < 0) minX = 0;
+            else minX = parseInt(x1);
+
+            if (y1 < 0) minY = 0;
+            else minY = parseInt(y1);
+
+            if (x2 > width) maxX = width;
+            else maxX = parseInt(x2);
+
+            if (y2 > height) maxY = height;
+            else maxY = parseInt(y2);
+
+            result.push([minX, minY, maxX, maxY]);
+        }
+
+        return result;
+    }
+
+    /**
      * Processes an image to detect bounding boxes and returns the adjusted bounding boxes 
      * based on the detection results.
      * 
@@ -390,25 +422,7 @@ class Detection {
 
         const prediction = this._multiclassNms(boxesXyxy, scores, 0.45, 0.1);
 
-        const result = [];
-        let minX, maxX, minY, maxY;
-        for (let i = 0; i < prediction.length; i++) {
-            const [x1, y1, x2, y2] = prediction[i];
-
-            if (x1 < 0) minX = 0;
-            else minX = parseInt(x1);
-
-            if (y1 < 0) minY = 0;
-            else minY = parseInt(y1);
-
-            if (x2 > width) maxX = width;
-            else maxX = parseInt(x2);
-
-            if (y2 > height) maxY = height;
-            else maxY = parseInt(y2);
-
-            result.push([minX, minY, maxX, maxY]);
-        }
+        const result = this._parseToXyxy(prediction, width, height);
 
         return result;
     }
