@@ -7,18 +7,12 @@ const { drawRectangle } = require('./utils/image-utils');
 
 const { tensorflowToImage, arrayToImage } = require('./utils/debug-utils');
 
-class Detection {
+class DetectionBase {
     /**
      * @type {string} Path to the ONNX model for standard OCR.
      * @private
      */
     _ortOnnxPath = '';
-
-    /**
-     * @type {Promise<ort.InferenceSession>|null} A promise for loading the OCR detection ONNX inference session.
-     * @private
-     */
-    _ocrDetectionOrtSessionPending = null;
 
     /**
      * @type {boolean} Flag indicating whether debugging is enabled.
@@ -40,31 +34,21 @@ class Detection {
     }
 
     /**
-     * Loads the OCR detection ONNX model asynchronously, storing the promise to avoid redundant loading.
-     * 
-     * @private
-     * @returns {Promise<ort.InferenceSession>} A promise that resolves with the OCR detection ONNX inference session.
-     */
-    _loadDetectionOrtSession() {
-        if (!this._ocrDetectionOrtSessionPending) {
-            const ocrOnnxPromise = ort.InferenceSession.create(this._ortOnnxPath);
-            this._ocrDetectionOrtSessionPending = ocrOnnxPromise;
-        }
-
-        return this._ocrDetectionOrtSessionPending;
-    }
-
-    /**
      * Pre-processes an image by resizing and converting it into a tensor format.
      * 
      * @private
-     * @param {Jimp} image - The image to pre-process. It is assumed to be a `Jimp` image object.
-     * @param {number[]} inputSize - The target input size [height, width] for the model.
-     * @returns {{inputArray: Float32Array, ratio: number}} An object containing:
+     * @param {string | Buffer | ArrayBuffer} url - The image to classify. It can be a file path (string) or image data (Buffer).
+     * @returns {Promise<{inputArray: Float32Array, width: number, height: number, ratio: number}>} An object containing:
      *   - `inputArray`: The pre-processed image converted into a Float32Array for model input.
+     *   - `width`: The width of the image.
+     *   - `height`: The height of the image.
      *   - `ratio`: The resizing ratio used to scale the image dimensions.
      */
-    _preProcessImage(image, inputSize) {
+    async _preProcessImage(url) {
+        const inputSize = [416, 416];
+
+        const image = await Jimp.read(url);
+
         const grayBgImage = tf.fill([inputSize[1], inputSize[0], 3], 114, 'float32');
 
         if (this._isDebug) {
@@ -108,6 +92,9 @@ class Detection {
 
         return {
             inputArray,
+            inputSize,
+            width,
+            height,
             ratio
         }
     }
@@ -207,7 +194,7 @@ class Detection {
 
         return resultTensor;
     }
-    
+
     /**
      * Extracts the bounding box coordinates (x1, y1, x2, y2) from the given boxes based on the specified order.
      * 
@@ -364,6 +351,7 @@ class Detection {
      * @param {Array<Array<number>>} prediction - An array of bounding boxes after NMS, where each box is represented as [x1, y1, x2, y2].
      * @param {number} width - The width of image.
      * @param {number} height - The heigth of image.
+     * @returns {Array<Array<number>>} An array of bounding boxes, where each box is represented as [x1, y1, x2, y2].
      */
     _parseToXyxy(prediction, width, height) {
         const result = [];
@@ -390,6 +378,58 @@ class Detection {
         return result;
     }
 
+    /**
+     * 
+     * @param {Float32Array} cpuData - The raw OCR data as a `Float32Array`.
+     * @param {number[]} dims - The dimensions of the result tensor.
+     * @param {number[]} inputSize - The target input size [height, width] for the model.
+     * @param {number} width- The width of the image.
+     * @param {number} height - The height of the image.
+     * @param {number} ratio - The resizing ratio used to scale the image dimensions.
+     * @returns {Array<Array<number>>} An array of bounding boxes, where each box is represented as [x1, y1, x2, y2]. 
+     */
+    _postProcess(cpuData, dims, inputSize, width, height, ratio) {
+        const predictions = this._demoPostProcess(cpuData, dims, inputSize);
+
+        const boxes = predictions.slice([0, 0], [-1, 4]);
+        const scores = predictions.slice([0, 4], [-1, 1]).mul(predictions.slice([0, 5], [-1, 1]));
+
+        const boxesXyxy = this._calcBbox(boxes, ratio);
+
+        const prediction = this._multiclassNms(boxesXyxy, scores, 0.45, 0.1);
+
+        const result = this._parseToXyxy(prediction, width, height);
+
+        return result;
+    }
+}
+
+class Detection extends DetectionBase {
+    /**
+     * @type {Promise<ort.InferenceSession>|null} A promise for loading the OCR detection ONNX inference session.
+     * @private
+     */
+    _ocrDetectionOrtSessionPending = null;
+
+    constructor(onnxPath) {
+        super(onnxPath);
+    }
+
+    /**
+     * Loads the OCR detection ONNX model asynchronously, storing the promise to avoid redundant loading.
+     * 
+     * @private
+     * @returns {Promise<ort.InferenceSession>} A promise that resolves with the OCR detection ONNX inference session.
+     */
+    _loadDetectionOrtSession() {
+        if (!this._ocrDetectionOrtSessionPending) {
+            const ocrOnnxPromise = ort.InferenceSession.create(this._ortOnnxPath);
+            this._ocrDetectionOrtSessionPending = ocrOnnxPromise;
+        }
+
+        return this._ocrDetectionOrtSessionPending;
+    }
+
     async _runDetection(inputTensor) {
         if (!this._ocrDetectionOrtSessionPending) {
             this._loadDetectionOrtSession();
@@ -414,46 +454,13 @@ class Detection {
      *          where each box is represented as [x1, y1, x2, y2], adjusted to the image size.
      */
     async detection(url) {
-        const image = await Jimp.read(url);
-
-        const inputSize = [416, 416];
-
-        const { width, height } = image.bitmap;
-
-        const { inputArray, ratio } = this._preProcessImage(image, inputSize);
+        const { inputArray, inputSize, width, height, ratio } = await this._preProcessImage(url);
 
         const inputTensor = new ort.Tensor('float32', inputArray, [1, 3, inputSize[0], inputSize[1]]);
 
         const { cpuData, dims } = await this._runDetection(inputTensor);
 
-        const predictions = this._demoPostProcess(cpuData, dims, inputSize);
-
-        const boxes = predictions.slice([0, 0], [-1, 4]);
-        const scores = predictions.slice([0, 4], [-1, 1]).mul(predictions.slice([0, 5], [-1, 1]));
-
-        const boxesXyxy = this._calcBbox(boxes, ratio);
-
-        const prediction = this._multiclassNms(boxesXyxy, scores, 0.45, 0.1);
-
-        const result = this._parseToXyxy(prediction, width, height);
-
-        if (this._isDebug) {
-            const color = cssColorToHex('#ff0000');
-
-            for (let i = 0; i < result.length; i++) {
-                const [x1, y1, x2, y2] = result[i];
-
-                const points = [
-                    { x: x1, y: y1 },
-                    { x: x2, y: y1 },
-                    { x: x2, y: y2 },
-                    { x: x1, y: y2 }
-                ];
-                drawRectangle(image, points, color);
-            }
-
-            image.write('debug/detection-result.jpg');
-        }
+        const result = this._postProcess(cpuData, dims, inputSize, width, height, ratio);
 
         return result;
     }
