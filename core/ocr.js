@@ -75,12 +75,6 @@ class OCRBase {
     _charsetPath = '';
 
     /**
-     * @type {Promise<ort.InferenceSession>|null} A promise for loading the OCR ONNX inference session.
-     * @private
-     */
-    _ocrOrtSessionPending = null;
-
-    /**
      * @type {Set<string>} A set of valid characters for OCR recognition.
      * @private
      */
@@ -299,6 +293,12 @@ class OCRBase {
 }
 
 class OCR extends OCRBase {
+    /**
+     * @type {Promise<ort.InferenceSession>|null} A promise for loading the OCR ONNX inference session.
+     * @private
+     */
+    _ocrOrtSessionPending = null;
+
     constructor(onnxPath, charsetPath) {
         super(onnxPath, charsetPath);
     }
