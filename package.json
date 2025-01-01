@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@tensorflow/tfjs": "^4.22.0",
+    "ddddocr-core": "^0.1.0",
     "jimp": "^1.6.0",
     "onnxruntime-node": "^1.20.1"
   },
