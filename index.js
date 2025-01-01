@@ -1,8 +1,9 @@
 const path = require('node:path');
 const fs = require('node:fs');
 
-const { OCR, CHARSET_RANGE } = require('./core/ocr');
+const { OCR } = require('./core/ocr');
 const { Detection } = require('./core/detection');
+const { CHARSET_RANGE } = require('ddddocr-core');
 
 /**
  * Model type constants representing different OCR models.
@@ -136,6 +137,7 @@ class DdddOcr {
      * 
      * @public
      * @param {CHARSET_RANGE} charsetRange - A number for predefined character sets or a string for a custom character set.
+     * @see https://rhy3h.github.io/ddddocr-core/global.html#CHARSET_RANGE
      * @returns {DdddOcr} The current instance for method chaining.
      */
     setRanges(charsetRange) {
