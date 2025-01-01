@@ -20,7 +20,8 @@
   "main": "index.js",
   "scripts": {
     "test": "node test/test.js",
-    "publish": "npm run test && npm publish"
+    "publish": "npm run test && npm publish",
+    "docs": "rimraf docs && jsdoc --configure jsdoc.json --verbose"
   },
   "dependencies": {
     "@tensorflow/tfjs": "^4.22.0",
