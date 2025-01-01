@@ -101,7 +101,7 @@ If you want to add the detected bounding box to the original image, here is an e
 const { Jimp, cssColorToHex } = require('jimp');
 
 const { DdddOcr } = require('ddddocr-node');
-const { drawRectangle } = require('ddddocr-node/core/utils/image-utils');
+const { drawRectangle } = require('ddddocr-core');
 
 const ddddOcr = new DdddOcr();
 
