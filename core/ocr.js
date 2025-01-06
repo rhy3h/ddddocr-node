@@ -1,3 +1,5 @@
+const fsm = require('node:fs/promises');
+
 const ort = require('onnxruntime-node');
 
 const { OCRBase } = require('ddddocr-core');
@@ -11,6 +13,20 @@ class OCR extends OCRBase {
 
     constructor(onnxPath, charsetPath) {
         super(onnxPath, charsetPath);
+    }
+
+    /**
+     * Loads a character set from a specified file path.
+     * 
+     * @private
+     * @param {string} charsetPath - The file path to the character set. 
+     * @returns {Promise<string[]>}
+     */
+    async _loadCharset(charsetPath) {
+        return fsm.readFile(charsetPath, { encoding: 'utf-8' })
+            .then((result) => {
+                return JSON.parse(result);
+            });
     }
 
     /**
