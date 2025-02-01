@@ -17,9 +17,11 @@
   ],
   "author": "rhy3h",
   "type": "commonjs",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
   "scripts": {
-    "test": "node test/test.js"
+    "build": "rimraf dist && rimraf ./node_modules/.cache && npx tsc -b",
+    "test": "npx ts-node test/test.ts"
   },
   "dependencies": {
     "ddddocr-core": "^1.0.2",

@@ -89,7 +89,6 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
 
 # Gatsby files
 .cache/
@@ -134,3 +133,4 @@ docs
 test
 
 .github
+tsconfig.json

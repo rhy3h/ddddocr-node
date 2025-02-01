@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "target": "ES6",
+    "outDir": "dist",
+    "skipLibCheck": true,
+    "lib": ["dom", "ES2021"],
+    "sourceMap": false,
+    "inlineSourceMap": false,
+    "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo",
+    "rootDir": "src",
+    "experimentalDecorators": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "declaration": true,
+    "composite": true,
+    "declarationMap": false
+  },
+  "exclude": ["node_modules", "test"]
+}
