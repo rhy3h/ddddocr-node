@@ -22,7 +22,7 @@
     "test": "node test/test.js"
   },
   "dependencies": {
-    "ddddocr-core": "^0.2.0",
+    "ddddocr-core": "^1.0.1",
     "onnxruntime-node": "^1.20.1"
   },
   "devDependencies": {
