@@ -22,11 +22,12 @@
     "test": "node test/test.js"
   },
   "dependencies": {
-    "ddddocr-core": "^1.0.1",
-    "onnxruntime-node": "^1.20.1"
+    "ddddocr-core": "^1.0.2",
+    "onnxruntime-node": "1.15"
   },
   "devDependencies": {
     "rimraf": "^6.0.1",
+    "ts-node": "^10.9.2",
     "typedoc": "^0.27.6",
     "typescript": "^5.7.3"
   }
