@@ -11,7 +11,7 @@ const assert = require('assert');
     const ocrNumCaseResult = await ddddOcr.classification('./test/example-en.jpg');
     assert.strictEqual(ocrNumCaseResult, '8621', 'OCR num case Error');
 
-    ddddOcr.setRanges(CHARSET_RANGE.LOWWER_CASE);
+    ddddOcr.setRanges(CHARSET_RANGE.LOWER_CASE);
     const ocrLowerCaseResult = await ddddOcr.classification('./test/example-en.jpg');
     assert.strictEqual(ocrLowerCaseResult, '', 'OCR lower case Error');
     
