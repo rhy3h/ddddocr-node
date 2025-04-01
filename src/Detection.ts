@@ -2,16 +2,28 @@ import * as ort from 'onnxruntime-node';
 
 import { DetectionBase } from 'ddddocr-core';
 
+import { LogSeverityLevel } from './type';
+
 class Detection extends DetectionBase {
     private _ocrDetectionOrtSessionPending!: Promise<ort.InferenceSession>;
+
+    private _logSeverityLevel: LogSeverityLevel = 4;
 
     constructor(onnxPath: string) {
         super(onnxPath);
     }
 
+    public setLogSeverityLevel(logSeverityLevel: LogSeverityLevel) {
+        this._logSeverityLevel = logSeverityLevel;
+
+        return this;
+    }
+
     private _loadDetectionOrtSession() {
         if (!this._ocrDetectionOrtSessionPending) {
-            const ocrOnnxPromise = ort.InferenceSession.create(this._ortOnnxPath);
+            const ocrOnnxPromise = ort.InferenceSession.create(this._ortOnnxPath, {
+                logSeverityLevel: this._logSeverityLevel
+            });
             this._ocrDetectionOrtSessionPending = ocrOnnxPromise;
         }
 
