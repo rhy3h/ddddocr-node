@@ -4,11 +4,21 @@ import * as ort from 'onnxruntime-node';
 
 import { OCRBase } from 'ddddocr-core';
 
+import { LogSeverityLevel } from './type';
+
 class OCR extends OCRBase {
     private _ocrOrtSessionPending!: Promise<[ort.InferenceSession, string[]]>;
 
+    private _logSeverityLevel: LogSeverityLevel = 4;
+
     constructor(onnxPath: string, charsetPath: string) {
         super(onnxPath, charsetPath);
+    }
+
+    public setLogSeverityLevel(logSeverityLevel: LogSeverityLevel) {
+        this._logSeverityLevel = logSeverityLevel;
+
+        return this;
     }
 
     private async _loadCharset(charsetPath: string): Promise<string[]> {
@@ -20,7 +30,9 @@ class OCR extends OCRBase {
 
     private _loadOcrOrtSession() {
         if (!this._ocrOrtSessionPending) {
-            const ocrOnnxPromise = ort.InferenceSession.create(this._ocrOnnxPath);
+            const ocrOnnxPromise = ort.InferenceSession.create(this._ocrOnnxPath, {
+                logSeverityLevel: this._logSeverityLevel
+            });
             const charsetPromise = this._loadCharset(this._charsetPath);
             this._ocrOrtSessionPending = Promise.all([ocrOnnxPromise, charsetPromise]);
         }

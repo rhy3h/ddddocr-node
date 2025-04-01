@@ -5,6 +5,7 @@ import { CHARSET_RANGE } from 'ddddocr-core';
 
 import { OCR } from './Ocr';
 import { Detection } from './Detection';
+import { LogSeverityLevel } from './type';
 
 /**
  * Model type constants representing different OCR models.
@@ -37,8 +38,10 @@ class DdddOcr {
 
     /**
      * Class representing an OCR (Optical Character Recognition) model.
+     * 
+     * @param logSeverityLevel Log severity level. See https://github.com/microsoft/onnxruntime/blob/main/include/onnxruntime/core/common/logging/severity.h
      */
-    constructor() {
+    constructor(logSeverityLevel: LogSeverityLevel = 4) {
         const root = path.join(__dirname, '..');
 
         this._ocrOnnxPath = `${root}/onnx/common_old.onnx`;
@@ -49,10 +52,10 @@ class DdddOcr {
 
         this._ocrDetectionOnnxPath = `${root}/onnx/common_det.onnx`;
 
-        this._ocr = new OCR(this._ocrOnnxPath, this._charsetPath);
-        this._ocrBeta = new OCR(this._ocrBetaOnnxPath, this._charsetBetaPath);
+        this._ocr = new OCR(this._ocrOnnxPath, this._charsetPath).setLogSeverityLevel(logSeverityLevel);
+        this._ocrBeta = new OCR(this._ocrBetaOnnxPath, this._charsetBetaPath).setLogSeverityLevel(logSeverityLevel);
 
-        this._detection = new Detection(this._ocrDetectionOnnxPath);
+        this._detection = new Detection(this._ocrDetectionOnnxPath).setLogSeverityLevel(logSeverityLevel);
     }
 
     /**
