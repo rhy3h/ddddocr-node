@@ -24,7 +24,8 @@
     "test": "npx ts-node test/test.ts"
   },
   "dependencies": {
-    "ddddocr-core": "^1.0.2",
+    "@tensorflow/tfjs": "^4.22.0",
+    "jimp": "^1.6.0",
     "onnxruntime-node": "1.15"
   },
   "devDependencies": {
