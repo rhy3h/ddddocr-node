@@ -1,12 +1,12 @@
 import tf from '@tensorflow/tfjs';
 import { Jimp } from 'jimp';
 
-import { DdddOcr } from './DdddOcr';
+import { DdddOcr } from './DdddOcr.js';
 
-import { ort } from './ort/index';
+import { ort } from './ort/index.js';
 
-import { argSort } from './utils/array-utils';
-import { tensorflowToImage, arrayToImage } from './utils/debug-utils';
+import { argSort } from './utils/array-utils.js';
+import { tensorflowToImage, arrayToImage } from './utils/debug-utils.js';
 
 class Detection extends DdddOcr {
     /**

@@ -1,8 +1,8 @@
-import { readFile } from './file-ops';
+import { readFile } from './file-ops/index.js';
 
-import { ort } from './ort/index';
+import { ort } from './ort/index.js';
 
-import { LogSeverityLevel } from './type';
+import { LogSeverityLevel } from './type.js';
 
 class DdddOcr {
     private path: string = '';

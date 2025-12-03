@@ -1,9 +1,9 @@
 import tf from '@tensorflow/tfjs'
 import { Jimp } from 'jimp';
 
-import { DdddOcr } from './DdddOcr';
+import { DdddOcr } from './DdddOcr.js';
 
-import { ort } from './ort/index';
+import { ort } from './ort/index.js';
 
 /**
  * Charset range constants that define different character sets for OCR.
