@@ -1,8 +1,8 @@
-import * as tf from '@tensorflow/tfjs';
 import { Jimp } from 'jimp';
 
 import { DdddOcr } from './DdddOcr.js';
 
+import { tf } from './tf/index.js';
 import { ort } from './ort/index.js';
 
 /**
