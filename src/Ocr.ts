@@ -1,10 +1,9 @@
 import tf from '@tensorflow/tfjs'
 import { Jimp } from 'jimp';
 
-import { ort } from './ort/index';
-import { readFile } from './file-ops/index';
+import { DdddOcr } from './DdddOcr';
 
-import { LogSeverityLevel } from './type';
+import { ort } from './ort/index';
 
 /**
  * Charset range constants that define different character sets for OCR.
@@ -56,15 +55,15 @@ const MIX_LOWER_UPPER_NUM_CASE = LOWER_CASE + UPPER_CASE + NUM_CASE;
 /**
  * @ignore
  */
-class OCR {
+class OCR extends DdddOcr {
     /**
      * Path to the ONNX model for standard OCR.
      */
-    protected _ocrOnnxPath: string;
+    private _ocrOnnxName: string;
     /**
      * Path to the charset file for standard OCR.
      */
-    protected _charsetPath: string;
+    private _charsetName: string;
 
     /**
      * A set of valid characters for OCR recognition.
@@ -77,20 +76,116 @@ class OCR {
 
     private _ocrOrtSessionPending!: Promise<[ort.InferenceSession, string[]]>;
 
-    private _logSeverityLevel: LogSeverityLevel = 4;
-
     /**
      * Ocr
      */
-    constructor(onnxPath: string, charsetPath: string) {
-        this._ocrOnnxPath = onnxPath;
-        this._charsetPath = charsetPath;
+    constructor(onnxName: string, charsetName: string) {
+        super();
+
+        this._ocrOnnxName = onnxName;
+        this._charsetName = charsetName;
     }
 
-    public setLogSeverityLevel(logSeverityLevel: LogSeverityLevel) {
-        this._logSeverityLevel = logSeverityLevel;
+    /**
+     * Checks if a character is valid based on the defined valid and invalid character sets.
+     */
+    private isValidChar(char: string): boolean {
+        if (this._inValidCharSet.has(char)) {
+            return false;
+        }
 
-        return this;
+        if (this._validCharSet.size === 0) {
+            return true;
+        }
+
+        return this._validCharSet.has(char);
+    }
+
+    /**
+     * Parses the given `argmaxData` array into a string using the provided character set.
+     * 
+     * The method iterates through the `argmaxData`, ensuring consecutive repeated items are skipped, 
+     * and converts the data into valid characters based on the provided `charset`. 
+     * The valid characters are checked using `isValidChar`, and only valid characters are included in the final result.
+     */
+    private parseToChar(argmaxData: number[], charset: string[]): string {
+        const result: string[] = [];
+
+        let lastItem = 0;
+        for (let i = 0; i < argmaxData.length; i++) {
+            if (argmaxData[i] === lastItem) {
+                continue;
+            }
+
+            lastItem = argmaxData[i];
+
+            const char = charset[argmaxData[i]];
+            if (argmaxData[i] !== 0 && this.isValidChar(char)) {
+                result.push(char);
+            }
+        }
+
+        return result.join('');
+    }
+
+    private async _preProcessImage(url: string): Promise<{ floatData: Float32Array; targetHeight: number; targetWidth: number }> {
+        const image = await Jimp.read(url);
+
+        const { width, height } = image.bitmap;
+        const targetHeight = 64;
+        const targetWidth = Math.floor(width * (targetHeight / height));
+        image.resize({
+            w: targetWidth, 
+            h: targetHeight
+        });
+        image.greyscale();
+        
+        const { data } = image.bitmap;
+        const floatData = new Float32Array(targetWidth * targetHeight);
+        for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+            floatData[j] = (data[i] / 255.0 - 0.5) / 0.5;
+        }
+
+        return { floatData, targetHeight, targetWidth };
+    }
+
+    private async postProcess(cpuData: Float32Array, dims: number[], charset: string[]): Promise<string> {
+        const tensor = tf.tensor(cpuData);
+        const reshapedTensor = tf.reshape(tensor, dims);
+        const argmaxResult = tf.argMax(reshapedTensor, 2);
+
+        const argmaxData = await argmaxResult.data();
+
+        const result = this.parseToChar(Array.from(argmaxData), charset);
+
+        return result;
+    }
+
+    private _loadOcrOrtSession() {
+        if (!this._ocrOrtSessionPending) {
+            const ocrOnnxPromise = this.loadModelAsync(this._ocrOnnxName);
+            const charsetPromise = this.loadJsonAsync(this._charsetName);
+            this._ocrOrtSessionPending = Promise.all([ocrOnnxPromise, charsetPromise]);
+        }
+
+        return this._ocrOrtSessionPending;
+    }
+
+    private async _run(inputTensor: ort.Tensor) {
+        if (!this._ocrOrtSessionPending) {
+            this._loadOcrOrtSession();
+        }
+
+        const [ortSession, charset] = await this._ocrOrtSessionPending;
+        const result = await ortSession.run({ input1: inputTensor });
+
+        const onnxValue = result['387'];
+
+        return {
+            cpuData: onnxValue.data as Float32Array,
+            dims: onnxValue.dims as number[],
+            charset
+        };
     }
 
     /**
@@ -109,21 +204,6 @@ class OCR {
         this._inValidCharSet = new Set(charset);
 
         return this;
-    }
-
-    /**
-     * Checks if a character is valid based on the defined valid and invalid character sets.
-     */
-    private isValidChar(char: string): boolean {
-        if (this._inValidCharSet.has(char)) {
-            return false;
-        }
-
-        if (this._validCharSet.size === 0) {
-            return true;
-        }
-
-        return this._validCharSet.has(char);
     }
 
     /**
@@ -178,101 +258,6 @@ class OCR {
         }
 
         return this;
-    }
-
-    /**
-     * Parses the given `argmaxData` array into a string using the provided character set.
-     * 
-     * The method iterates through the `argmaxData`, ensuring consecutive repeated items are skipped, 
-     * and converts the data into valid characters based on the provided `charset`. 
-     * The valid characters are checked using `isValidChar`, and only valid characters are included in the final result.
-     */
-    private parseToChar(argmaxData: number[], charset: string[]): string {
-        const result: string[] = [];
-
-        let lastItem = 0;
-        for (let i = 0; i < argmaxData.length; i++) {
-            if (argmaxData[i] === lastItem) {
-                continue;
-            }
-
-            lastItem = argmaxData[i];
-
-            const char = charset[argmaxData[i]];
-            if (argmaxData[i] !== 0 && this.isValidChar(char)) {
-                result.push(char);
-            }
-        }
-
-        return result.join('');
-    }
-
-    protected async _preProcessImage(url: string): Promise<{ floatData: Float32Array; targetHeight: number; targetWidth: number }> {
-        const image = await Jimp.read(url);
-
-        const { width, height } = image.bitmap;
-        const targetHeight = 64;
-        const targetWidth = Math.floor(width * (targetHeight / height));
-        image.resize({
-            w: targetWidth, 
-            h: targetHeight
-        });
-        image.greyscale();
-        
-        const { data } = image.bitmap;
-        const floatData = new Float32Array(targetWidth * targetHeight);
-        for (let i = 0, j = 0; i < data.length; i += 4, j++) {
-            floatData[j] = (data[i] / 255.0 - 0.5) / 0.5;
-        }
-
-        return { floatData, targetHeight, targetWidth };
-    }
-
-    protected async postProcess(cpuData: Float32Array, dims: number[], charset: string[]): Promise<string> {
-        const tensor = tf.tensor(cpuData);
-        const reshapedTensor = tf.reshape(tensor, dims);
-        const argmaxResult = tf.argMax(reshapedTensor, 2);
-
-        const argmaxData = await argmaxResult.data();
-
-        const result = this.parseToChar(Array.from(argmaxData), charset);
-
-        return result;
-    }
-
-    private async _loadCharset(charsetPath: string): Promise<string[]> {
-        const result = await readFile(charsetPath, { encoding: 'utf-8' })
-
-        return JSON.parse(result);
-    }
-
-    private _loadOcrOrtSession() {
-        if (!this._ocrOrtSessionPending) {
-            const ocrOnnxPromise = ort.InferenceSession.create(this._ocrOnnxPath, {
-                logSeverityLevel: this._logSeverityLevel
-            });
-            const charsetPromise = this._loadCharset(this._charsetPath);
-            this._ocrOrtSessionPending = Promise.all([ocrOnnxPromise, charsetPromise]);
-        }
-
-        return this._ocrOrtSessionPending;
-    }
-
-    private async _run(inputTensor: ort.Tensor) {
-        if (!this._ocrOrtSessionPending) {
-            this._loadOcrOrtSession();
-        }
-
-        const [ortSession, charset] = await this._ocrOrtSessionPending;
-        const result = await ortSession.run({ input1: inputTensor });
-
-        const onnxValue = result['387'];
-
-        return {
-            cpuData: onnxValue.data as Float32Array,
-            dims: onnxValue.dims as number[],
-            charset
-        };
     }
 
     /**

@@ -1,4 +1,3 @@
-import path from 'node:path';
 import fs from 'node:fs';
 
 import { OCR, CHARSET_RANGE } from './Ocr';
@@ -20,14 +19,6 @@ enum MODEL_TYPE {
 }
 
 class DdddOcr {
-    private _ocrOnnxPath: string;
-    private _charsetPath: string;
-
-    private _ocrBetaOnnxPath: string;
-    private _charsetBetaPath: string;
-
-    private _ocrDetectionOnnxPath: string;
-
     private _ocr: OCR;
     private _ocrBeta: OCR;
     private _ocrMode: MODEL_TYPE = MODEL_TYPE.OCR;
@@ -39,21 +30,17 @@ class DdddOcr {
      * 
      * @param logSeverityLevel Log severity level. See https://github.com/microsoft/onnxruntime/blob/main/include/onnxruntime/core/common/logging/severity.h
      */
-    constructor(logSeverityLevel: LogSeverityLevel = 4) {
-        const root = path.join(__dirname, '..');
+    constructor(root: string, logSeverityLevel: LogSeverityLevel = 4) {
+        this._ocr = new OCR('common_old.onnx', 'common_old.json')
+            .setPath(`${root}/onnx/`)
+            .setLogSeverityLevel(logSeverityLevel);
+        this._ocrBeta = new OCR('common.onnx', 'common.json')
+            .setPath(`${root}/onnx/`)
+            .setLogSeverityLevel(logSeverityLevel);
 
-        this._ocrOnnxPath = `${root}/onnx/common_old.onnx`;
-        this._charsetPath = `${root}/onnx/common_old.json`;
-
-        this._ocrBetaOnnxPath = `${root}/onnx/common.onnx`;
-        this._charsetBetaPath = `${root}/onnx/common.json`;
-
-        this._ocrDetectionOnnxPath = `${root}/onnx/common_det.onnx`;
-
-        this._ocr = new OCR(this._ocrOnnxPath, this._charsetPath).setLogSeverityLevel(logSeverityLevel);
-        this._ocrBeta = new OCR(this._ocrBetaOnnxPath, this._charsetBetaPath).setLogSeverityLevel(logSeverityLevel);
-
-        this._detection = new Detection(this._ocrDetectionOnnxPath).setLogSeverityLevel(logSeverityLevel);
+        this._detection = new Detection('common_det.onnx')
+            .setPath(`${root}/onnx/`)
+            .setLogSeverityLevel(logSeverityLevel);
     }
 
     /**

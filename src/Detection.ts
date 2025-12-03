@@ -1,62 +1,42 @@
 import tf from '@tensorflow/tfjs';
 import { Jimp } from 'jimp';
 
+import { DdddOcr } from './DdddOcr';
+
 import { ort } from './ort/index';
 
 import { argSort } from './utils/array-utils';
 import { tensorflowToImage, arrayToImage } from './utils/debug-utils';
 
-import { LogSeverityLevel } from './type';
-
-class Detection {
+class Detection extends DdddOcr {
     /**
      * Path to the ONNX model for standard OCR.
      * @private
      */
-    protected _ortOnnxPath = '';
-
-    /**
-     * Flag indicating whether debugging is enabled.
-     */
-    private _isDebug = false;
+    private _ortOnnxPath = '';
 
     private _ocrDetectionOrtSessionPending!: Promise<ort.InferenceSession>;
-
-    private _logSeverityLevel: LogSeverityLevel = 4;
 
     /**
      * Detection
      */
     constructor(onnxPath: string) {
+        super();
+
         this._ortOnnxPath = onnxPath;
-    }
-
-    public setLogSeverityLevel(logSeverityLevel: LogSeverityLevel) {
-        this._logSeverityLevel = logSeverityLevel;
-
-        return this;
-    }
-
-    /**
-     * Enables the debug mode and prepares the debug folder.
-     */
-    public enableDebug(): this {
-        this._isDebug = true;
-
-        return this;
     }
 
     /**
      * Pre-processes an image by resizing and converting it into a tensor format.
      */
-    protected async _preProcessImage(url: string) {
+    private async _preProcessImage(url: string) {
         const inputSize: [number, number] = [416, 416];
 
         const image = await Jimp.read(url);
 
         const grayBgImage = tf.fill([inputSize[1], inputSize[0], 3], 114, 'float32');
 
-        if (this._isDebug) {
+        if (this.isDebug) {
             tensorflowToImage(grayBgImage, inputSize, 'debug/pre-process-step-1.jpg');
         }
 
@@ -82,13 +62,13 @@ class Detection {
             }
         }
 
-        if (this._isDebug) {
+        if (this.isDebug) {
             arrayToImage(floatData, inputSize, 'debug/pre-process-step-2.jpg');
         }
 
         const backToTensorImg = tf.tensor(floatData, [inputSize[1], inputSize[0], 3], 'float32');
 
-        if (this._isDebug) {
+        if (this.isDebug) {
             tensorflowToImage(backToTensorImg, inputSize, 'debug/pre-process-step-3.jpg');
         }
 
@@ -325,7 +305,7 @@ class Detection {
         return result;
     }
 
-    protected _postProcess(cpuData: Float32Array, dims: number[], inputSize: number[], width: number, height: number, ratio: number) {
+    private _postProcess(cpuData: Float32Array, dims: number[], inputSize: number[], width: number, height: number, ratio: number) {
         const predictions = this._demoPostProcess(cpuData, dims, inputSize);
 
         const boxes = predictions.slice([0, 0], [-1, 4]);
@@ -342,10 +322,7 @@ class Detection {
 
     private _loadDetectionOrtSession() {
         if (!this._ocrDetectionOrtSessionPending) {
-            const ocrOnnxPromise = ort.InferenceSession.create(this._ortOnnxPath, {
-                logSeverityLevel: this._logSeverityLevel
-            });
-            this._ocrDetectionOrtSessionPending = ocrOnnxPromise;
+            this._ocrDetectionOrtSessionPending = this.loadModelAsync(this._ortOnnxPath);
         }
 
         return this._ocrDetectionOrtSessionPending;
