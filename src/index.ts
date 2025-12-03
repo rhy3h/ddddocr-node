@@ -1,4 +1,4 @@
-import fs from 'node:fs';
+import { existsSync, rmSync, mkdirSync } from './file-ops/index';
 
 import { OCR, CHARSET_RANGE } from './Ocr';
 import { Detection } from './Detection';
@@ -51,11 +51,11 @@ class DdddOcr {
 
         const debugFolderPath = 'debug';
 
-        if (fs.existsSync(debugFolderPath)) {
-            fs.rmSync(debugFolderPath, { recursive: true, force: true });
+        if (existsSync(debugFolderPath)) {
+            rmSync(debugFolderPath, { recursive: true, force: true });
         }
 
-        fs.mkdirSync(debugFolderPath);
+        mkdirSync(debugFolderPath);
 
         return this;
     }
