@@ -22,6 +22,9 @@ lib-cov
 # Coverage directory used by tools like istanbul
 coverage
 *.lcov
+.tshy
+.tshy-build
+.turbo
 
 # nyc test coverage
 .nyc_output
@@ -129,5 +132,4 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-debug
 docs
