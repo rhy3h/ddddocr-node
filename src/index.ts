@@ -1,4 +1,4 @@
-import { existsSync, rmSync, mkdirSync } from './file-ops/index.js';
+import { existsSync, rmSync, mkdirSync, isSupportDebug } from './file-ops/index.js';
 
 import { OCR, CHARSET_RANGE } from './Ocr.js';
 import { Detection } from './Detection.js';
@@ -32,14 +32,14 @@ class DdddOcr {
      */
     constructor(root: string, logSeverityLevel: LogSeverityLevel = 4) {
         this._ocr = new OCR('common_old.onnx', 'common_old.json')
-            .setPath(`${root}/onnx/`)
+            .setPath(root)
             .setLogSeverityLevel(logSeverityLevel);
         this._ocrBeta = new OCR('common.onnx', 'common.json')
-            .setPath(`${root}/onnx/`)
+            .setPath(root)
             .setLogSeverityLevel(logSeverityLevel);
 
         this._detection = new Detection('common_det.onnx')
-            .setPath(`${root}/onnx/`)
+            .setPath(root)
             .setLogSeverityLevel(logSeverityLevel);
     }
 
@@ -47,6 +47,8 @@ class DdddOcr {
      * Enables the debug mode and prepares the debug folder.
      */
     public enableDebug(): this {
+        isSupportDebug();
+
         this._detection.enableDebug();
 
         const debugFolderPath = 'debug';
