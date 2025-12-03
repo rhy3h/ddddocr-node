@@ -16,11 +16,12 @@
     "ddddocr"
   ],
   "author": "rhy3h",
-  "type": "commonjs",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "onnx"
+  ],
   "scripts": {
-    "build": "rimraf dist && rimraf ./node_modules/.cache && npx tsc -b",
+    "prepare": "tshy",
     "test": "npx ts-node test/test.ts"
   },
   "dependencies": {
@@ -34,5 +35,39 @@
     "tshy": "^3.1.0",
     "typedoc": "^0.27.6",
     "typescript": "^5.7.3"
-  }
+  },
+  "tshy": {
+    "exclude": [
+      "**/*.test.ts"
+    ],
+    "esmDialects": [
+      "browser"
+    ],
+    "exports": {
+      "./package.json": "./package.json",
+      ".": "./src/index.ts"
+    }
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "browser": {
+        "types": "./dist/browser/index.d.ts",
+        "default": "./dist/browser/index.js"
+      },
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/commonjs/index.d.ts",
+        "default": "./dist/commonjs/index.js"
+      }
+    }
+  },
+  "main": "./dist/commonjs/index.js",
+  "typings": "dist/commonjs/index.d.ts",
+  "type": "module",
+  "types": "./dist/commonjs/index.d.ts",
+  "module": "./dist/esm/index.js"
 }
