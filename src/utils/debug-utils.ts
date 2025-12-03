@@ -1,4 +1,4 @@
-import * as tf from '@tensorflow/tfjs';
+import { tf } from '../tf/index.js';
 import { Jimp, rgbaToInt } from 'jimp';
 
 async function tensorflowToImage(tensor: tf.Tensor, inputSize: [number, number], fileName: `${string}.${string}`) {
