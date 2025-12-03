@@ -1,9 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs';
 
-import { CHARSET_RANGE } from 'ddddocr-core';
-
-import { OCR } from './Ocr';
+import { OCR, CHARSET_RANGE } from './Ocr';
 import { Detection } from './Detection';
 import { LogSeverityLevel } from './type';
 
