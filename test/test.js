@@ -1,16 +1,9 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import assert from 'node:assert';
 
 import { DdddOcr, CHARSET_RANGE, MODEL_TYPE } from '../dist/commonjs/index.js';
 
 (async () => {
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-
-    const root = path.join(__dirname, '..', 'onnx', '/');
-
-    const ddddOcr = new DdddOcr(root).setLogSeverityLevel(0);
+    const ddddOcr = new DdddOcr();
 
     const ocrResult = await ddddOcr.classification('./test/example-en.jpg');
     assert.strictEqual(ocrResult, '8A62N1', 'OCR Error');
