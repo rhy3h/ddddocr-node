@@ -1,8 +1,10 @@
-import { readFile } from './file-ops/index.js';
+import { existsSync, readFile } from './file-ops/index.js';
 
 import { ort } from './ort/index.js';
 
 import { LogSeverityLevel } from './type.js';
+
+import { to } from 'await-to-js';
 
 class DdddOcr {
     private path: string = '';
@@ -35,18 +37,60 @@ class DdddOcr {
         return this;
     }
 
+    private async readModelAsync(url: string) {
+        if (existsSync(url)) {
+            const result = await readFile(url);
+            return result.buffer;
+        }
+
+        const [fetchErr, response] = await to(fetch(url));
+
+        if (fetchErr) {
+            throw new Error(`Could not load Buffer from URL: ${url}`);
+        }
+
+        if (!response.ok) {
+            throw new Error(`HTTP Status ${response.status} for url ${url}`);
+        }
+
+        const [arrayBufferErr, data] = await to(response.arrayBuffer());
+
+        return data;
+    }
+
     protected async loadModelAsync(url: string) {
         if (this.path !== undefined) {
             url = this.path + url;
         }
 
-        const result = await readFile(url);
+        const result = await this.readModelAsync(url);
 
-        const onnxPromise = ort.InferenceSession.create(result.buffer, {
+        const onnxPromise = ort.InferenceSession.create(result, {
             logSeverityLevel: this.logSeverityLevel
         });
 
         return onnxPromise;
+    }
+
+    private async readJsonAsync(url: string) {
+        if (existsSync(url)) {
+            const result = await readFile(url, { encoding: 'utf-8' });
+            return result;
+        }
+
+        const [fetchErr, response] = await to(fetch(url));
+
+        if (fetchErr) {
+            throw new Error(`Could not load Buffer from URL: ${url}`);
+        }
+
+        if (!response.ok) {
+            throw new Error(`HTTP Status ${response.status} for url ${url}`);
+        }
+
+        const [arrayBufferErr, data] = await to(response.text());
+
+        return data;
     }
 
     protected async loadJsonAsync(url: string) {
@@ -54,7 +98,7 @@ class DdddOcr {
             url = this.path + url;
         }
 
-        const result = await readFile(url, { encoding: 'utf-8' });
+        const result = await this.readJsonAsync(url);
         return JSON.parse(result);
     }
 }
