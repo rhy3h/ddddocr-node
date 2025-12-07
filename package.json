@@ -22,7 +22,8 @@
   ],
   "scripts": {
     "prepare": "tshy",
-    "test": "npx ts-node test/test.ts"
+    "pretest": "npm run prepare",
+    "test": "node test/test.js"
   },
   "dependencies": {
     "@tensorflow/tfjs": "^4.22.0",
