@@ -28,14 +28,11 @@ class DdddOcr {
     /**
      * Class representing an OCR (Optical Character Recognition) model.
      */
-    constructor(root: string) {
-        this._ocr = new OCR('common_old.onnx', 'common_old.json')
-            .setPath(root);
-        this._ocrBeta = new OCR('common.onnx', 'common.json')
-            .setPath(root)
+    constructor() {
+        this._ocr = new OCR('common_old.onnx', 'common_old.json');
+        this._ocrBeta = new OCR('common.onnx', 'common.json');
 
-        this._detection = new Detection('common_det.onnx')
-            .setPath(root);
+        this._detection = new Detection('common_det.onnx');
     }
 
     /**
@@ -53,6 +50,14 @@ class DdddOcr {
         }
 
         mkdirSync(debugFolderPath);
+
+        return this;
+    }
+
+    public setPath(root: string) {
+        this._ocr.setPath(root);
+        this._ocrBeta.setPath(root);
+        this._detection.setPath(root);
 
         return this;
     }
