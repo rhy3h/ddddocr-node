@@ -1,7 +1,7 @@
 {
   "name": "ddddocr-js",
   "version": "1.1.0",
-  "description": "The Node version of DdddOcr",
+  "description": "The JS version of DdddOcr",
   "homepage": "https://github.com/rhy3h/ddddocr-js#readme",
   "bugs": {
     "url": "https://github.com/rhy3h/ddddocr-js/issues"
