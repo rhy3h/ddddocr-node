@@ -1,17 +1,17 @@
-# DdddOcr Node
+# DdddOcr JS
 
-[![npm](https://img.shields.io/npm/v/ddddocr-node.svg)](https://www.npmjs.com/package/ddddocr-node)
+[![npm](https://img.shields.io/npm/v/ddddocr-js.svg)](https://www.npmjs.com/package/ddddocr-js)
 
 This project is a port of the Python project [DdddOcr](https://github.com/sml2h3/ddddocr). 
 
 The goal is to make it easy to use this trained model for text detection in JavaScript.
 
-[Docs](https://rhy3h.github.io/ddddocr-node/)
+[Docs](https://rhy3h.github.io/ddddocr-js/)
 
 ## Installation
 
 ```sh
-npm install ddddocr-node
+npm install ddddocr-js
 ```
 
 ## Features
@@ -25,7 +25,7 @@ npm install ddddocr-node
 Primarily used for recognizing single-line text, where the text occupies the main portion of the image, such as common alphanumeric captchas. This project can recognize Chinese characters, English (with random case sensitivity or case constrained by specified ranges), numbers, and certain special characters.
 
 ```js
-const { DdddOcr } = require('ddddocr-node');
+const { DdddOcr } = require('ddddocr-js');
 
 const ddddOcr = new DdddOcr();
 
@@ -36,7 +36,7 @@ console.log(result);
 This library includes two built-in OCR models, which do not switch automatically by default. You need to use `setOcrMode()` with parameters to switch between them.
 
 ```js
-const { DdddOcr, MODEL_TYPE } = require('ddddocr-node');
+const { DdddOcr, MODEL_TYPE } = require('ddddocr-js');
 
 // Method 1: Enable Beta OCR mode after creating an instance
 const ddddOcr = new DdddOcr();
@@ -73,7 +73,7 @@ For int input, please refer to the table below.
 For `string` input, provide a string where each character is treated as a candidate character, e.g., `"0123456789+-x/="`.
 
 ```js
-const { DdddOcr, CHARSET_RANGE } = require('ddddocr-node');
+const { DdddOcr, CHARSET_RANGE } = require('ddddocr-js');
 
 const ddddOcr = new DdddOcr();
 ddddOcr.setRanges(CHARSET_RANGE.NUM_CASE);
@@ -87,7 +87,7 @@ console.log(result);
 The main purpose is to quickly detect the possible location of the target object in the image. Since the detected target may not necessarily be text, this function only provides the bounding box (bbox) location of the target. In object detection, we typically use a bbox (bounding box) to describe the target location. A bbox is a rectangular frame, which can be determined by the x and y coordinates of the top-left corner and the x and y coordinates of the bottom-right corner.
 
 ```js
-const { DdddOcr } = require('ddddocr-node');
+const { DdddOcr } = require('ddddocr-js');
 
 const ddddOcr = new DdddOcr();
 
@@ -100,7 +100,7 @@ If you want to add the detected bounding box to the original image, here is an e
 ```js
 const { Jimp, cssColorToHex } = require('jimp');
 
-const { DdddOcr } = require('ddddocr-node');
+const { DdddOcr } = require('ddddocr-js');
 const { drawRectangle } = require('ddddocr-core');
 
 const ddddOcr = new DdddOcr();
