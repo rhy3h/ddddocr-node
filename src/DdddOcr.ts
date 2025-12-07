@@ -4,6 +4,8 @@ import { ort } from './ort/index.js';
 
 import { LogSeverityLevel } from './type.js';
 
+import { ONNX_DIR } from './onnx/index.js';
+
 import { to } from 'await-to-js';
 
 class DdddOcr {
@@ -15,7 +17,9 @@ class DdddOcr {
      */
     protected isDebug = false;
 
-    constructor() {}
+    constructor() {
+        this.path = `${ONNX_DIR}/`;
+    }
 
     /**
      * Enables the debug mode and prepares the debug folder.
