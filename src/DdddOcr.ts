@@ -30,14 +30,23 @@ class DdddOcr {
         return this;
     }
 
+    /**
+     * Sets the log severity level.
+     * 
+     * @param logSeverityLevel Log severity level. See https://github.com/microsoft/onnxruntime/blob/main/include/onnxruntime/core/common/logging/severity.h
+     */
     public setLogSeverityLevel(logSeverityLevel: LogSeverityLevel) {
         this.logSeverityLevel = logSeverityLevel;
 
         return this;
     }
 
+    /**
+     * Sets the root path for ONNX models.
+     */
     public setPath(path: string) {
         this.path = path;
+
         return this;
     }
 
