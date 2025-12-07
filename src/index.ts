@@ -27,20 +27,15 @@ class DdddOcr {
 
     /**
      * Class representing an OCR (Optical Character Recognition) model.
-     * 
-     * @param logSeverityLevel Log severity level. See https://github.com/microsoft/onnxruntime/blob/main/include/onnxruntime/core/common/logging/severity.h
      */
-    constructor(root: string, logSeverityLevel: LogSeverityLevel = 4) {
+    constructor(root: string) {
         this._ocr = new OCR('common_old.onnx', 'common_old.json')
-            .setPath(root)
-            .setLogSeverityLevel(logSeverityLevel);
+            .setPath(root);
         this._ocrBeta = new OCR('common.onnx', 'common.json')
             .setPath(root)
-            .setLogSeverityLevel(logSeverityLevel);
 
         this._detection = new Detection('common_det.onnx')
-            .setPath(root)
-            .setLogSeverityLevel(logSeverityLevel);
+            .setPath(root);
     }
 
     /**
@@ -58,6 +53,19 @@ class DdddOcr {
         }
 
         mkdirSync(debugFolderPath);
+
+        return this;
+    }
+
+    /**
+     * 
+     * @param logSeverityLevel Log severity level. See https://github.com/microsoft/onnxruntime/blob/main/include/onnxruntime/core/common/logging/severity.h
+     * @returns 
+     */
+    public setLogSeverityLevel(logSeverityLevel: LogSeverityLevel) {
+        this._ocr.setLogSeverityLevel(logSeverityLevel);
+        this._ocrBeta.setLogSeverityLevel(logSeverityLevel);
+        this._detection.setLogSeverityLevel(logSeverityLevel);
 
         return this;
     }
