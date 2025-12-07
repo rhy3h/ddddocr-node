@@ -10,7 +10,7 @@ import { DdddOcr, CHARSET_RANGE, MODEL_TYPE } from '../dist/commonjs/index.js';
 
     const root = path.join(__dirname, '..', 'onnx', '/');
 
-    const ddddOcr = new DdddOcr(root);
+    const ddddOcr = new DdddOcr(root).setLogSeverityLevel(0);
 
     const ocrResult = await ddddOcr.classification('./test/example-en.jpg');
     assert.strictEqual(ocrResult, '8A62N1', 'OCR Error');
