@@ -1,10 +1,14 @@
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import assert from 'node:assert';
 
-import { DdddOcr, CHARSET_RANGE, MODEL_TYPE } from '../src/index';
+import { DdddOcr, CHARSET_RANGE, MODEL_TYPE } from '../dist/commonjs/index.js';
 
 (async () => {
-    const root = path.join(__dirname, '..');
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+
+    const root = path.join(__dirname, '..', 'onnx', '/');
 
     const ddddOcr = new DdddOcr(root);
 
@@ -18,7 +22,7 @@ import { DdddOcr, CHARSET_RANGE, MODEL_TYPE } from '../src/index';
     ddddOcr.setRanges(CHARSET_RANGE.LOWER_CASE);
     const ocrLowerCaseResult = await ddddOcr.classification('./test/example-en.jpg');
     assert.strictEqual(ocrLowerCaseResult, '', 'OCR lower case Error');
-    
+
     ddddOcr.setRanges(CHARSET_RANGE.UPPER_CASE);
     const ocrUpperCaseResult = await ddddOcr.classification('./test/example-en.jpg');
     assert.strictEqual(ocrUpperCaseResult, 'AN', 'OCR upper case Error');
