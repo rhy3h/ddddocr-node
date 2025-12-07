@@ -1,14 +1,14 @@
 {
-  "name": "ddddocr-node",
+  "name": "ddddocr-js",
   "version": "1.1.0",
   "description": "The Node version of DdddOcr",
-  "homepage": "https://github.com/rhy3h/ddddocr-node#readme",
+  "homepage": "https://github.com/rhy3h/ddddocr-js#readme",
   "bugs": {
-    "url": "https://github.com/rhy3h/ddddocr-node/issues"
+    "url": "https://github.com/rhy3h/ddddocr-js/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rhy3h/ddddocr-node.git"
+    "url": "git+https://github.com/rhy3h/ddddocr-js.git"
   },
   "license": "MIT",
   "keywords": [
