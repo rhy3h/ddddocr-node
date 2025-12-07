@@ -9,7 +9,7 @@ import { ONNX_DIR } from './onnx/index.js';
 import { to } from 'await-to-js';
 
 class DdddOcr {
-    private path: string = '';
+    private path: string = undefined;
     private logSeverityLevel: LogSeverityLevel = 4;
 
     /**
@@ -18,7 +18,9 @@ class DdddOcr {
     protected isDebug = false;
 
     constructor() {
-        this.path = `${ONNX_DIR}/`;
+        if (ONNX_DIR !== undefined) {
+            this.path = `${ONNX_DIR}/`;
+        }
     }
 
     /**

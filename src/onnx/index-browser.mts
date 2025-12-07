@@ -1,1 +1,1 @@
-export const ONNX_DIR = () => '';
+export const ONNX_DIR = undefined;
