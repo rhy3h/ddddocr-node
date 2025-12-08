@@ -1,8 +1,8 @@
-import { existsSync, rmSync, mkdirSync, isSupportDebug } from './file-ops/index.js';
-
 import { OCR, CHARSET_RANGE } from './Ocr.js';
 import { Detection } from './Detection.js';
 import { LogSeverityLevel } from './type.js';
+
+import { existsSync, rmSync, mkdirSync, isSupportDebug } from './file-ops/index.js';
 
 /**
  * Model type constants representing different OCR models.

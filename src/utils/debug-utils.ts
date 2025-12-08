@@ -1,5 +1,6 @@
-import { tf } from '../tf/index.js';
 import { Jimp, rgbaToInt } from 'jimp';
+
+import { tf } from '../tf/index.js';
 
 async function tensorflowToImage(tensor: tf.Tensor, inputSize: [number, number], fileName: `${string}.${string}`) {
     const image = new Jimp({ width: inputSize[1], height: inputSize[0] });
