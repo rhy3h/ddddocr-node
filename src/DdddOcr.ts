@@ -1,12 +1,10 @@
+import { to } from 'await-to-js';
+
 import { existsSync, readFile } from './file-ops/index.js';
-
 import { ort } from './ort/index.js';
-
-import { LogSeverityLevel } from './type.js';
-
 import { ONNX_DIR } from './onnx/index.js';
 
-import { to } from 'await-to-js';
+import { LogSeverityLevel } from './type.js';
 
 class DdddOcr {
     private path: string = undefined;
