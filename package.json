@@ -23,7 +23,8 @@
   "scripts": {
     "prepare": "tshy",
     "pretest": "npm run prepare",
-    "test": "node test/test.js"
+    "test": "node test/test.js",
+    "tsdoc": "npx typedoc src/index.ts --out public"
   },
   "dependencies": {
     "@tensorflow/tfjs": "^4.22.0",
