@@ -2,7 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/ddddocr-node.svg)](https://www.npmjs.com/package/ddddocr-node)
 
-[中文](/locales/zh-TW.md)
+[中文](/docs/zh-TW.md)
 
 This project is a port of the Python project [DdddOcr](https://github.com/sml2h3/ddddocr). 
 

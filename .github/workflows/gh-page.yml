@@ -23,11 +23,11 @@ jobs:
         uses: erikyo/tsdoc-action@v1
         with:
           source_dir: ./src
-          output_dir: ./docs
+          output_dir: ./public
           front_page: README.md
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
         with:
             github_token: ${{ secrets.GITHUB_TOKEN }}
-            publish_dir: ./docs
+            publish_dir: ./public
