@@ -15,7 +15,7 @@ class Detection extends DdddOcr {
      */
     private _ortOnnxPath = '';
 
-    private _ocrDetectionOrtSessionPending!: Promise<ort.InferenceSession>;
+    private _ocrDetectionOrtSessionPending!: Promise<any>;
 
     /**
      * Detection
@@ -47,7 +47,7 @@ class Detection extends DdddOcr {
         const resizedHeight = Math.round(height * ratio);
 
         image.resize({
-            w: resizedWidth, 
+            w: resizedWidth,
             h: resizedHeight
         });
 
@@ -234,12 +234,12 @@ class Detection extends DdddOcr {
             const inter = w.mul(h);
 
             const ovr = inter.div(tf.add(areas.slice(0, 1), tf.gather(areas, orderTensor).slice(1)).sub(inter))
-            
+
             const inds = this._where(ovr.arraySync() as number[], nmsThr);
 
             order = tf.gather(orderTensor, tf.tensor(inds, undefined, 'int32').add(1).toInt()).arraySync() as number[];
         }
-        
+
         return keep;
     }
 
@@ -328,7 +328,7 @@ class Detection extends DdddOcr {
         return this._ocrDetectionOrtSessionPending;
     }
 
-    private async _runDetection(inputTensor: ort.Tensor) {
+    private async _runDetection(inputTensor: any) {
         if (!this._ocrDetectionOrtSessionPending) {
             this._loadDetectionOrtSession();
         }

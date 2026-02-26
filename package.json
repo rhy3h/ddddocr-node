@@ -23,7 +23,8 @@
   "scripts": {
     "prepare": "tshy",
     "pretest": "npm run prepare",
-    "test": "node test/test.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "tsdoc": "npx typedoc src/index.ts --out public"
   },
   "dependencies": {
@@ -34,10 +35,12 @@
     "onnxruntime-web": "^1.23.2"
   },
   "devDependencies": {
+    "@types/node": "^25.3.1",
     "rimraf": "^6.0.1",
     "tshy": "^3.1.0",
     "typedoc": "^0.27.6",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.18"
   },
   "tshy": {
     "exclude": [

@@ -74,7 +74,7 @@ class OCR extends DdddOcr {
      */
     private _inValidCharSet: Set<string> = new Set();
 
-    private _ocrOrtSessionPending!: Promise<[ort.InferenceSession, string[]]>;
+    private _ocrOrtSessionPending!: Promise<any>;
 
     /**
      * Ocr
@@ -135,11 +135,11 @@ class OCR extends DdddOcr {
         const targetHeight = 64;
         const targetWidth = Math.floor(width * (targetHeight / height));
         image.resize({
-            w: targetWidth, 
+            w: targetWidth,
             h: targetHeight
         });
         image.greyscale();
-        
+
         const { data } = image.bitmap;
         const floatData = new Float32Array(targetWidth * targetHeight);
         for (let i = 0, j = 0; i < data.length; i += 4, j++) {
@@ -171,7 +171,7 @@ class OCR extends DdddOcr {
         return this._ocrOrtSessionPending;
     }
 
-    private async _run(inputTensor: ort.Tensor) {
+    private async _run(inputTensor: any) {
         if (!this._ocrOrtSessionPending) {
             this._loadOcrOrtSession();
         }
