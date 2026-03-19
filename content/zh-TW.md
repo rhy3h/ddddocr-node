@@ -8,7 +8,7 @@
 
 目標是讓在 JavaScript 中使用這個訓練好的模型進行文字偵測變得容易。
 
-[文件](https://rhy3h.github.io/ddddocr-node/)
+[文件](https://rhrenhaoyehy3h.github.io/ddddocr-node/)
 
 ## 安裝
 
@@ -128,7 +128,7 @@ image.write('output.jpg');
 
 ## Star 歷史
 
-[![Star History Chart](https://api.star-history.com/svg?repos=rhy3h/ddddocr-node&type=date&legend=top-left)](https://www.star-history.com/#rhy3h/ddddocr-node&type=date&legend=top-left)
+[![Star History Chart](https://api.star-history.com/svg?repos=renhaoyeh/ddddocr-node&type=date&legend=top-left)](https://www.star-history.com/#renhaoyeh/ddddocr-node&type=date&legend=top-left)
 
 ## 未來計畫
 

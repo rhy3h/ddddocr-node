@@ -2,20 +2,20 @@
   "name": "ddddocr-node",
   "version": "2.1.7",
   "description": "The JS version of DdddOcr",
-  "homepage": "https://github.com/rhy3h/ddddocr-node#readme",
+  "homepage": "https://github.com/renhaoyeh/ddddocr-node#readme",
   "bugs": {
-    "url": "https://github.com/rhy3h/ddddocr-node/issues"
+    "url": "https://github.com/renhaoyeh/ddddocr-node/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rhy3h/ddddocr-node.git"
+    "url": "git+https://github.com/renhaoyeh/ddddocr-node.git"
   },
   "license": "MIT",
   "keywords": [
     "ocr",
     "ddddocr"
   ],
-  "author": "rhy3h",
+  "author": "Ren-Hao Yeh",
   "files": [
     "dist",
     "onnx"

@@ -8,7 +8,7 @@ This project is a port of the Python project [DdddOcr](https://github.com/sml2h3
 
 The goal is to make it easy to use this trained model for text detection in JavaScript.
 
-[Docs](https://rhy3h.github.io/ddddocr-node/)
+[Docs](https://renhaoyeh.github.io/ddddocr-node/)
 
 ## Installation
 
@@ -128,7 +128,7 @@ image.write('output.jpg');
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=rhy3h/ddddocr-node&type=date&legend=top-left)](https://www.star-history.com/#rhy3h/ddddocr-node&type=date&legend=top-left)
+[![Star History Chart](https://api.star-history.com/svg?repos=renhaoyeh/ddddocr-node&type=date&legend=top-left)](https://www.star-history.com/#renhaoyeh/ddddocr-node&type=date&legend=top-left)
 
 ## Futures
 

@@ -100,7 +100,7 @@ class DdddOcr {
      * Sets the range restriction for OCR results.
      * 
      * This method restricts the characters returned by OCR based on the input:
-     * - For `number` input, it applies a predefined character set. See the [CHARSET_RANGE](https://rhy3h.github.io/ddddocr-core/enums/CHARSET_RANGE.html) type for the available options.
+     * - For `number` input, it applies a predefined character set. See the [CHARSET_RANGE](https://renhaoyeh.github.io/ddddocr-core/enums/CHARSET_RANGE.html) type for the available options.
      * - For `string` input, each character in the string is treated as a valid OCR result.
      */
     public setRanges(charsetRange: CHARSET_RANGE | string): this {
